@@ -26,19 +26,24 @@ var tokenCache = {};
 
 io.use(function (socket, next) {
     const idToken = socket.handshake.auth.idToken;
-    if (idToken in tokenCache) {
-        socket.uId = tokenCache[idToken]
-        next()
-    }
-    else {
-        firebase.auth().verifyIdToken(idToken).catch((error) => {
-            const err = new Error('Unauthorised');
-            next(err);
-        }).then((decodedToken) => {
-            socket.uId = decodedToken.uid;
-            tokenCache[idToken] = decodedToken.uid;
-            next();
-        })
+    if (idToken) {
+        if (idToken in tokenCache) {
+            socket.uId = tokenCache[idToken]
+            next()
+        }
+        else {
+            firebase.auth().verifyIdToken(idToken).catch((error) => {
+                const err = new Error('Unauthorised');
+                next(err);
+            }).then((decodedToken) => {
+                socket.uId = decodedToken.uid;
+                tokenCache[idToken] = decodedToken.uid;
+                next();
+            })
+        }
+    } else {
+        const err = new Error('Unauthorised');
+        next(err);
     }
 })
     .on('connection', function (socket) {
