@@ -7,8 +7,10 @@
       <v-row justify="center" no-gutters>
         <v-btn color="white" text class="my-1"> About </v-btn>
         <v-btn color="white" text class="my-1"> Contact </v-btn>
+        <!--
         <v-btn color="white" text class="my-1"> Terms Of Use </v-btn>
         <v-btn color="white" text class="my-1"> Privacy Policy </v-btn>
+        -->
       </v-row>
     </v-container>
     <!--
