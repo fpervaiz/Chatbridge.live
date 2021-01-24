@@ -10,7 +10,11 @@
     </v-row>
     <v-row class="my-5">
       <v-col cols="6">
-        <h4>Who?</h4>
+        <h4>
+          Who?<span v-if="this.remotePeerFriendlyName">
+            ({{ this.remotePeerFriendlyName }})</span
+          >
+        </h4>
         <div v-if="!peerCamStream">
           <h2>{{ peerStatusMessages[peerStatus].heading }}</h2>
           <p>{{ peerStatusMessages[peerStatus].subtitle }}</p>
@@ -23,7 +27,11 @@
           :src-object.prop.camel="peerCamStream"
         ></video>
 
-        <h4>You</h4>
+        <h4>
+          You<span v-if="this.localPeerFriendlyName">
+            ({{ this.localPeerFriendlyName }})</span
+          >
+        </h4>
         <div v-if="!userCamStream">
           <h2>No webcam found!</h2>
           <p>Connect a webcam or allow access.</p>
@@ -40,9 +48,25 @@
       <v-col cols="6">
         <h3>Chat</h3>
         <div class="my-5" id="chatbox">
-          <p v-for="(message, i) in chatMessages" :key="i">
-            <strong>{{ message.sender }}:</strong> {{ message.text }}
-          </p>
+          <template v-for="(message, i) in chatMessages">
+            <p
+              v-if="message.sender === '_STATUS_GREEN'"
+              :key="i"
+              style="color: green"
+            >
+              <strong>{{ message.text }}</strong>
+            </p>
+            <p
+              v-else-if="message.sender === '_STATUS_RED'"
+              :key="i"
+              style="color: red"
+            >
+              <strong>{{ message.text }}</strong>
+            </p>
+            <p v-else :key="i">
+              <strong>{{ message.sender }}:</strong> {{ message.text }}
+            </p>
+          </template>
         </div>
 
         <v-text-field
@@ -79,6 +103,8 @@ export default {
       currentRoomId: null,
       localPeerId: null,
       remotePeerId: null,
+      localPeerFriendlyName: null,
+      remotePeerFriendlyName: null,
 
       userCamStream: null,
       peerCamStream: null,
@@ -112,7 +138,7 @@ export default {
   methods: {
     search() {
       if (this.peerConnected) {
-        this.endPeerConnection();
+        this.closePeerConnection();
       }
 
       if (this.userCamStream) {
@@ -127,7 +153,7 @@ export default {
           const chatMessage = {
             type: "chatMessage",
             chatMessage: {
-              sender: this.localPeerId,
+              sender: this.localPeerFriendlyName,
               text: this.chatMessageInput,
             },
           };
@@ -136,7 +162,7 @@ export default {
           this.chatMessageInput = "";
         } else {
           this.chatMessages.push({
-            sender: "Error",
+            sender: "_STATUS_RED",
             text: "You aren't connected to anyone",
           });
         }
@@ -146,11 +172,19 @@ export default {
     },
 
     closePeerConnection() {
+      this.chatMessages.push({
+        sender: "_STATUS_RED",
+        text: "Disconnected from " + this.remotePeerFriendlyName,
+      });
+
       this.localPeer.destroy();
       this.peerCamStream = null;
       this.peerConnected = false;
       this.peerStatus = "disconnected";
+      this.localPeerId = null;
       this.remotePeerId = null;
+      this.localPeerFriendlyName = null;
+      this.remotePeerFriendlyName = null;
       this.localPeer = null;
     },
   },
@@ -161,7 +195,7 @@ export default {
     this.chatBox = document.getElementById("chatbox");
 
     self.$store.dispatch("getAuthIdTokenAction").then((idToken) => {
-      self.matchingSocket = io("https://uniofcam-chat-backend.herokuapp.com/", {
+      self.matchingSocket = io(process.env.VUE_APP_BACKEND_URL, {
         transports: ["websocket"],
         auth: {
           idToken: idToken,
@@ -182,6 +216,8 @@ export default {
           );
           self.localPeerId = self.matchingSocket.id;
           self.remotePeerId = data.peerId;
+          self.localPeerFriendlyName = data.localFriendlyName;
+          self.remotePeerFriendlyName = data.peerFriendlyName;
           self.currentRoomId = data.roomId;
 
           self.localPeer = new Peer({ initiator: data.isInitiator });
@@ -213,6 +249,10 @@ export default {
           self.localPeer.on("connect", () => {
             this.peerConnected = true;
             console.log("connected to remotePeer!");
+            this.chatMessages.push({
+              sender: "_STATUS_GREEN",
+              text: "Connected to " + this.remotePeerFriendlyName,
+            });
             this.localPeer.addStream(this.userCamStream);
           });
 

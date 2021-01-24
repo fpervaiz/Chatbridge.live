@@ -8,6 +8,7 @@ const io = require('socket.io')(http, {
 });
 const admin = require('firebase-admin')
 const { v4: uuidv4 } = require('uuid');
+const rug = require('random-username-generator');
 
 var firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
 
@@ -68,16 +69,21 @@ io.use(function (socket, next) {
                         sessionHistory[socket.uId][frontOfQueue.uId] = Date.now();
                         sessionHistory[frontOfQueue.uId][socket.uId] = Date.now();
 
+                        socket.friendlyName = rug.generate();
+                        frontOfQueue.friendlyName = rug.generate();
+
                         const newRoomId = uuidv4();
                         const initiatorId = socket.id;
                         const receiverId = frontOfQueue.id;
+                        const initiatorFriendlyName = socket.friendlyName
+                        const receiverFriendlyName = frontOfQueue.friendlyName
 
                         rooms[newRoomId] = {
                             [initiatorId]: socket,
                             [receiverId]: frontOfQueue
                         }
-                        socket.emit('connect_peer', { roomId: newRoomId, peerId: receiverId, isInitiator: true });
-                        frontOfQueue.emit('connect_peer', { roomId: newRoomId, peerId: initiatorId, isInitiator: false });
+                        socket.emit('connect_peer', { roomId: newRoomId, peerId: receiverId, peerFriendlyName: receiverFriendlyName, localFriendlyName: initiatorFriendlyName, isInitiator: true });
+                        frontOfQueue.emit('connect_peer', { roomId: newRoomId, peerId: initiatorId, peerFriendlyName: initiatorFriendlyName, localFriendlyName: receiverFriendlyName, isInitiator: false });
                     }
                     else {
                         userQueue.push(socket);
