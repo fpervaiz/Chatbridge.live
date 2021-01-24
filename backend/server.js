@@ -2,7 +2,7 @@ const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http, {
     cors: {
-        origin: 'https://quizzical-ritchie-46875c.netlify.app/',
+        origin: process.env.CORS_ORIGIN,
         methods: ['GET', 'POST']
     }
 });
@@ -102,5 +102,6 @@ io.use(function (socket, next) {
     });
 
 http.listen(process.env.PORT, () => {
+    console.log('CORS origin:', process.env.CORS_ORIGIN);
     console.log('listening on *:', process.env.PORT);
 });
