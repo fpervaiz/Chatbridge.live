@@ -2,7 +2,7 @@
   <v-container fluid class="my-2">
     <v-row class="mt-2 mb-5">
       <v-col justify="center" align="center"
-        ><v-btn @click="search"
+        ><v-btn @click="search" :disabled="!userCamStream || !wsConnected"
           >Find New Caller
           <v-icon dark right> mdi-account-search </v-icon></v-btn
         ></v-col
@@ -55,7 +55,9 @@
         ></v-text-field>
       </v-col>
     </v-row>
-    <v-snackbar v-model="wsConnected" timeout="2000">Connected</v-snackbar>
+    <v-snackbar v-model="wsConnectedSnackbar" timeout="2000"
+      >Connected</v-snackbar
+    >
   </v-container>
 </template>
 
@@ -86,6 +88,7 @@ export default {
       chatBox: null,
 
       wsConnected: false,
+      wsConnectedSnackbar: false,
       peerConnected: false,
       peerStatus: "paused",
 
@@ -142,7 +145,7 @@ export default {
       }
     },
 
-    endPeerConnection() {
+    closePeerConnection() {
       this.localPeer.destroy();
       this.peerCamStream = null;
       this.peerConnected = false;
@@ -168,6 +171,7 @@ export default {
       self.matchingSocket.on("connect", () => {
         console.log("matching connected ", self.matchingSocket.id);
         self.wsConnected = true;
+        self.wsConnectedSnackbar = true;
 
         self.matchingSocket.on("connect_peer", (data) => {
           console.log(
@@ -227,6 +231,7 @@ export default {
 
           self.localPeer.on("close", () => {
             this.closePeerConnection();
+            this.peerConnected = false;
           });
         });
       });
@@ -252,8 +257,8 @@ export default {
       this.userCamStream.getTracks().forEach((track) => track.stop());
     }
 
-    this.signalingSocket.disconnect();
     this.matchingSocket.disconnect();
+    console.log("Disconnected matching");
   },
 };
 </script>
