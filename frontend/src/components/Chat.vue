@@ -138,7 +138,7 @@ export default {
   methods: {
     search() {
       if (this.peerConnected) {
-        this.closePeerConnection();
+        this.localPeer.destroy();
       }
 
       if (this.userCamStream) {
@@ -177,7 +177,6 @@ export default {
         text: "Disconnected from " + this.remotePeerFriendlyName,
       });
 
-      this.localPeer.destroy();
       this.peerCamStream = null;
       this.peerConnected = false;
       this.peerStatus = "disconnected";
@@ -271,7 +270,6 @@ export default {
 
           self.localPeer.on("close", () => {
             this.closePeerConnection();
-            this.peerConnected = false;
           });
         });
       });
