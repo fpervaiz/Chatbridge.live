@@ -64,7 +64,7 @@
               <strong>{{ message.text }}</strong>
             </p>
             <p v-else :key="i">
-              <strong>{{ message.sender }}:</strong>
+              <strong>{{ message.sender }}: </strong>
               <span v-html="autolinker.link(message.text)"></span>
             </p>
           </template>
