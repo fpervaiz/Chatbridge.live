@@ -64,7 +64,8 @@
               <strong>{{ message.text }}</strong>
             </p>
             <p v-else :key="i">
-              <strong>{{ message.sender }}:</strong> {{ message.text }}
+              <strong>{{ message.sender }}:</strong>
+              <span v-html="autolinker.link(message.text)"></span>
             </p>
           </template>
         </div>
@@ -97,8 +98,8 @@
 
 <script>
 import io from "socket.io-client";
-//import SimpleSignalClient from "simple-signal-client";
 import Peer from "simple-peer";
+import Autolinker from "autolinker";
 
 export default {
   name: "Chat",
@@ -143,6 +144,8 @@ export default {
           subtitle: "The other person has left the chat.",
         },
       },
+
+      autolinker: new Autolinker(),
     };
   },
 
