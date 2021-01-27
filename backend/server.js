@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:8080'
 const PORT = process.env.PORT || 3000
 
@@ -15,7 +17,16 @@ const { v4: uuidv4 } = require('uuid')
 const rug = require('random-username-generator')
 const Denque = require("denque")
 
-var firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG)
+var firebaseConfig = process.env.FIREBASE_CONFIG ? JSON.parse(process.env.FIREBASE_CONFIG) : {
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID,
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID
+};
+
 var firebase = admin.initializeApp(firebaseConfig)
 
 var userQueue = new Denque()
@@ -141,7 +152,7 @@ io.on('connection', function (socket) {
     })
 })
 
-http.listen(process.env.PORT, () => {
+http.listen(PORT, () => {
     console.log('CORS origin:', CORS_ORIGIN)
     console.log('listening on *:', PORT)
 })
