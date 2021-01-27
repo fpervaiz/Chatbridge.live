@@ -26,6 +26,8 @@ var roomsLive = {};
 
 var tokenCache = {};
 
+var connectedUsers = new Set();
+
 app.get('/', (req, res) => {
     res.redirect('https://uniofcam.chat');
 });
@@ -35,7 +37,13 @@ io.use(function (socket, next) {
     if (idToken) {
         if (idToken in tokenCache) {
             socket.uId = tokenCache[idToken]
-            next()
+            if (connectedUsers.has(socket.uId)) {
+                next(new Error('Already connected'));
+            }
+            else {
+                connectedUsers.add(socket.uId);
+                next();
+            }
         }
         else {
             firebase.auth().verifyIdToken(idToken)
@@ -43,8 +51,15 @@ io.use(function (socket, next) {
                     next(new Error('Unauthorised'));
                 }).then((decodedToken) => {
                     socket.uId = decodedToken.uid;
-                    tokenCache[idToken] = decodedToken.uid;
-                    next();
+                    if (connectedUsers.has(socket.uId)) {
+                        next(new Error('Already connected'));
+                    }
+                    else {
+                        tokenCache[idToken] = decodedToken.uid;
+                        connectedUsers.add(socket.uId);
+                        next();
+                    }
+
                 })
         }
     } else {
@@ -118,6 +133,10 @@ io.on('connection', function (socket) {
         console.log(socket.id, 'SIGNAL_SEND', data.roomId, data.destinationPeerId)
         var peerSocket = roomsLive[data.roomId][data.destinationPeerId];
         peerSocket.emit('signal_receive', { roomId: data.roomId, peerId: senderPeerId, signalData: data.signalData });
+    })
+
+    socket.on('disconnect', () => {
+        connectedUsers.delete(socket.uId);
     })
 });
 
