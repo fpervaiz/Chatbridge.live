@@ -79,9 +79,19 @@
         ></v-text-field>
       </v-col>
     </v-row>
-    <v-snackbar v-model="wsConnectedSnackbar" timeout="2000"
-      >Connected</v-snackbar
-    >
+    <v-overlay v-if="wsConnectionOverlay && !peerConnected">
+      <v-alert v-if="wsConnectionError" type="error">{{
+        this.wsConnectionError
+      }}</v-alert>
+      <v-alert v-else>
+        <v-progress-circular
+          class="mr-5"
+          indeterminate
+          color="primary"
+        ></v-progress-circular
+        >Connecting you to our matchmaking genie...</v-alert
+      >
+    </v-overlay>
   </v-container>
 </template>
 
@@ -114,7 +124,8 @@ export default {
       chatBox: null,
 
       wsConnected: false,
-      wsConnectedSnackbar: false,
+      wsConnectionOverlay: true,
+      wsConnectionError: "",
       peerConnected: false,
       peerStatus: "paused",
 
@@ -206,6 +217,7 @@ export default {
     self.$store.dispatch("getAuthIdTokenAction").then((idToken) => {
       self.matchingSocket = io(process.env.VUE_APP_BACKEND_URL, {
         transports: ["websocket"],
+        reconnectionAttempts: 5,
         auth: {
           idToken: idToken,
         },
@@ -215,7 +227,8 @@ export default {
         console.log("matching connected ", self.matchingSocket.id);
         document.addEventListener("beforeunload", this.onHardClose);
         self.wsConnected = true;
-        self.wsConnectedSnackbar = true;
+        self.wsConnectionOverlay = false;
+        self.wsConnectionError = "";
 
         self.matchingSocket.on("connect_peer", (data) => {
           console.log(
@@ -283,6 +296,26 @@ export default {
             this.closePeerConnection();
           });
         });
+      });
+
+      self.matchingSocket.on("connect_error", (error) => {
+        console.log(error);
+        switch (error.message) {
+          case "unauthorised": {
+            this.wsConnectionError =
+              "Authentication error. Please try again later.";
+            break;
+          }
+          case "already_connected": {
+            this.wsConnectionError =
+              "You have UniOfCam.Chat open in another tab. Please close it and try again.";
+            break;
+          }
+          default:
+            this.wsConnectionError =
+              "Looks like our matchmaking genie has gone missing. Please try again later.";
+        }
+        this.wsConnectionOverlay = true;
       });
     });
 
