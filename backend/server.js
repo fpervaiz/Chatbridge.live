@@ -49,7 +49,7 @@ io.use(function (socket, next) {
         if (idToken in tokenCache) {
             socket.uId = tokenCache[idToken]
             if (connectedUsers.has(socket.uId)) {
-                next(new Error('Already connected'))
+                next(new Error('already_connected'))
             }
             else {
                 connectedUsers.add(socket.uId)
@@ -60,11 +60,11 @@ io.use(function (socket, next) {
             firebase.auth().verifyIdToken(idToken)
                 .catch((error) => {
                     console.log('Firebase error', error)
-                    next(new Error('Unauthorised'))
+                    next(new Error('unauthorised'))
                 }).then((decodedToken) => {
                     socket.uId = decodedToken.uid
                     if (connectedUsers.has(socket.uId)) {
-                        next(new Error('Already connected'))
+                        next(new Error('already_connected'))
                     }
                     else {
                         tokenCache[idToken] = decodedToken.uid
@@ -75,7 +75,7 @@ io.use(function (socket, next) {
                 })
         }
     } else {
-        next(new Error('Unauthorised'))
+        next(new Error('unauthorised'))
     }
 })
 
