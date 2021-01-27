@@ -13,14 +13,17 @@ const io = require('socket.io')(http, {
 const admin = require('firebase-admin')
 const { v4: uuidv4 } = require('uuid');
 const rug = require('random-username-generator');
+const Denque = require("denque");
 
 var firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
 var firebase = admin.initializeApp(firebaseConfig)
 
-var userQueue = [];
+var userQueue = new Denque();
 var userQueueCache = new Set();
-var sessionHistory = {};
-var rooms = {};
+
+var roomsHistory = {};
+var roomsLive = {};
+
 var tokenCache = {};
 
 app.get('/', (req, res) => {
@@ -54,23 +57,31 @@ io.on('connection', function (socket) {
     socket.on('search', function () {
         if (!(userQueueCache.has(socket.uId))) {
             console.log('(', socket.id, ') SEARCH')
-            if (userQueue[0]) {
-                var frontOfQueue = userQueue[0]
-                if (!sessionHistory[socket.uId] || !sessionHistory[socket.uId][frontOfQueue.uId] || Date.now() - sessionHistory[socket.uId][frontOfQueue.uId] >= 1800000) {
+
+            var frontOfQueue = userQueue.peekFront();
+            while (frontOfQueue && !frontOfQueue.connected) {
+                delete userQueueCache[frontOfQueue.uId];
+                userQueue.shift();
+                console.log('removed disconnected socket from queue');
+                frontOfQueue = userQueue.peekFront();
+            }
+
+            if (frontOfQueue) {
+                if (!roomsHistory[socket.uId] || !roomsHistory[socket.uId][frontOfQueue.uId] || Date.now() - roomsHistory[socket.uId][frontOfQueue.uId] >= 1800000) {
                     console.log('Found match for ', socket.id, ' (', frontOfQueue.id, ')');
 
                     userQueueCache.delete(userQueue.shift().uId);
 
-                    if (!sessionHistory[socket.uId]) {
-                        sessionHistory[socket.uId] = {};
+                    if (!roomsHistory[socket.uId]) {
+                        roomsHistory[socket.uId] = {};
                     }
 
-                    if (!sessionHistory[frontOfQueue.uId]) {
-                        sessionHistory[frontOfQueue.uId] = {};
+                    if (!roomsHistory[frontOfQueue.uId]) {
+                        roomsHistory[frontOfQueue.uId] = {};
                     }
 
-                    sessionHistory[socket.uId][frontOfQueue.uId] = Date.now();
-                    sessionHistory[frontOfQueue.uId][socket.uId] = Date.now();
+                    roomsHistory[socket.uId][frontOfQueue.uId] = Date.now();
+                    roomsHistory[frontOfQueue.uId][socket.uId] = Date.now();
 
                     socket.friendlyName = rug.generate();
                     frontOfQueue.friendlyName = rug.generate();
@@ -81,7 +92,7 @@ io.on('connection', function (socket) {
                     const initiatorFriendlyName = socket.friendlyName
                     const receiverFriendlyName = frontOfQueue.friendlyName
 
-                    rooms[newRoomId] = {
+                    roomsLive[newRoomId] = {
                         [initiatorId]: socket,
                         [receiverId]: frontOfQueue
                     }
@@ -105,7 +116,7 @@ io.on('connection', function (socket) {
     socket.on('signal_send', (data) => {
         const senderPeerId = socket.id;
         console.log(socket.id, 'SIGNAL_SEND', data.roomId, data.destinationPeerId)
-        var peerSocket = rooms[data.roomId][data.destinationPeerId];
+        var peerSocket = roomsLive[data.roomId][data.destinationPeerId];
         peerSocket.emit('signal_receive', { roomId: data.roomId, peerId: senderPeerId, signalData: data.signalData });
     })
 });
