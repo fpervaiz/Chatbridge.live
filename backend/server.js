@@ -148,6 +148,7 @@ io.on('connection', function (socket) {
     })
 
     socket.on('disconnect', () => {
+        userQueueCache.delete(socket.uId)
         connectedUsers.delete(socket.uId)
     })
 })
