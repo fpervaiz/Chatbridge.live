@@ -230,6 +230,20 @@ export default {
         self.wsConnectionOverlay = false;
         self.wsConnectionError = "";
 
+        if (navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices
+            .getUserMedia({
+              video: { facingMode: "user", width: 1280, height: 720 },
+              audio: true,
+            })
+            .then(function (stream) {
+              self.userCamStream = stream;
+            })
+            .catch(function (error) {
+              console.log(error);
+            });
+        }
+
         self.matchingSocket.on("connect_peer", (data) => {
           console.log(
             "connecting to peer ",
@@ -318,20 +332,6 @@ export default {
         this.wsConnectionOverlay = true;
       });
     });
-
-    if (navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices
-        .getUserMedia({
-          video: { facingMode: "user", width: 1280, height: 720 },
-          audio: true,
-        })
-        .then(function (stream) {
-          self.userCamStream = stream;
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    }
   },
 
   beforeDestroy() {
