@@ -186,6 +186,16 @@ export default {
       this.remotePeerFriendlyName = null;
       this.localPeer = null;
     },
+
+    onHardClose() {
+      if (this.peerConnected) {
+        this.localPeer.destroy();
+      }
+
+      if (this.wsConnected) {
+        this.matchingSocket.disconnect();
+      }
+    },
   },
 
   mounted() {
@@ -203,6 +213,7 @@ export default {
 
       self.matchingSocket.on("connect", () => {
         console.log("matching connected ", self.matchingSocket.id);
+        document.addEventListener("beforeunload", this.onHardClose);
         self.wsConnected = true;
         self.wsConnectedSnackbar = true;
 
@@ -295,6 +306,7 @@ export default {
       this.userCamStream.getTracks().forEach((track) => track.stop());
     }
 
+    document.removeEventListener("beforeunload", this.onHardClose);
     this.matchingSocket.disconnect();
     console.log("Disconnected matching");
   },
