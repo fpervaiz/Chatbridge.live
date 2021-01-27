@@ -11,7 +11,7 @@
     <v-row class="my-5">
       <v-col cols="6">
         <h4>
-          Who?<span v-if="this.remotePeerFriendlyName">
+          Who?<span v-if="this.remotePeerFriendlyName && this.peerConnected">
             ({{ this.remotePeerFriendlyName }})</span
           >
         </h4>
@@ -28,7 +28,7 @@
         ></video>
 
         <h4>
-          You<span v-if="this.localPeerFriendlyName">
+          You<span v-if="this.localPeerFriendlyName && this.peerConnected">
             ({{ this.localPeerFriendlyName }})</span
           >
         </h4>
