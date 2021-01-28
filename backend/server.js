@@ -147,6 +147,13 @@ io.on('connection', function (socket) {
         peerSocket.emit('signal_receive', { roomId: data.roomId, peerId: senderPeerId, signalData: data.signalData })
     })
 
+    socket.on('disconnect_peer', (data) => {
+        const senderPeerId = socket.id
+        console.log(socket.id, 'DISCONNECT_PEER', data.roomId, data.destinationPeerId)
+        var peerSocket = roomsLive[data.roomId][data.destinationPeerId]
+        peerSocket.emit('disconnect_peer', { roomId: data.roomId, peerId: senderPeerId })
+    })
+
     socket.on('disconnect', () => {
         userQueueCache.delete(socket.uId)
         connectedUsers.delete(socket.uId)

@@ -139,9 +139,17 @@ export default {
           heading: "Searching...",
           subtitle: "Finding you someone...",
         },
+        connecting: {
+          heading: "Connecting...",
+          subtitle: "Prepare your opening line!",
+        },
         disconnected: {
           heading: "Disconnected.",
           subtitle: "The other person has left the chat.",
+        },
+        disconnectedInitiator: {
+          heading: "Disconnected.",
+          subtitle: "You left the chat.",
         },
       },
 
@@ -152,7 +160,7 @@ export default {
   methods: {
     search() {
       if (this.peerConnected) {
-        this.localPeer.destroy();
+        this.closePeerConnection(true);
       }
 
       if (this.userCamStream) {
@@ -185,7 +193,16 @@ export default {
       }
     },
 
-    closePeerConnection() {
+    closePeerConnection(isInitiator) {
+      if (isInitiator) {
+        this.matchingSocket.emit("disconnect_peer", {
+          roomId: this.currentRoomId,
+          destinationPeerId: this.remotePeerId,
+        });
+      }
+
+      this.localPeer.destroy();
+
       this.chatMessages.push({
         sender: "_STATUS_RED",
         text: "Disconnected from " + this.remotePeerFriendlyName,
@@ -193,7 +210,7 @@ export default {
 
       this.peerCamStream = null;
       this.peerConnected = false;
-      this.peerStatus = "disconnected";
+      this.peerStatus = isInitiator ? "disconnectedInitiator" : "disconnected";
       this.localPeerId = null;
       this.remotePeerId = null;
       this.localPeerFriendlyName = null;
@@ -203,7 +220,7 @@ export default {
 
     onHardClose() {
       if (this.peerConnected) {
-        this.localPeer.destroy();
+        this.closePeerConnection(true);
       }
 
       if (this.wsConnected) {
@@ -254,13 +271,17 @@ export default {
             " room ",
             data.roomId
           );
+          self.peerStatus = "connecting";
           self.localPeerId = self.matchingSocket.id;
           self.remotePeerId = data.peerId;
           self.localPeerFriendlyName = data.localFriendlyName;
           self.remotePeerFriendlyName = data.peerFriendlyName;
           self.currentRoomId = data.roomId;
 
-          self.localPeer = new Peer({ initiator: data.isInitiator });
+          self.localPeer = new Peer({
+            initiator: data.isInitiator,
+            stream: this.userCamStream,
+          });
 
           self.localPeer.on("signal", (signalData) => {
             self.matchingSocket.emit("signal_send", {
@@ -270,22 +291,6 @@ export default {
             });
           });
 
-          self.matchingSocket.on("signal_receive", (data) => {
-            if (
-              data.roomId === self.currentRoomId &&
-              data.peerId === self.remotePeerId
-            ) {
-              self.localPeer.signal(data.signalData);
-            } else {
-              console.log(
-                "unexpected signal data ",
-                data.roomId,
-                data.peerId,
-                data.signalData
-              );
-            }
-          });
-
           self.localPeer.on("connect", () => {
             this.peerConnected = true;
             console.log("connected to remotePeer!");
@@ -293,7 +298,6 @@ export default {
               sender: "_STATUS_GREEN",
               text: "Connected to " + this.remotePeerFriendlyName,
             });
-            this.localPeer.addStream(this.userCamStream);
           });
 
           self.localPeer.on("stream", (stream) => {
@@ -309,10 +313,42 @@ export default {
             }
           });
 
-          self.localPeer.on("close", () => {
-            this.closePeerConnection();
+          self.localPeer.on("error", (err) => {
+            console.log(err);
           });
         });
+
+        self.matchingSocket.on("signal_receive", (data) => {
+          if (
+            data.roomId === self.currentRoomId &&
+            data.peerId === self.remotePeerId
+          ) {
+            self.localPeer.signal(data.signalData);
+          } else {
+            console.log(
+              "unexpected signal data ",
+              data.roomId,
+              data.peerId,
+              data.signalData
+            );
+          }
+        });
+
+        self.matchingSocket.on("disconnect_peer", (data) => {
+          if (
+            data.roomId === this.currentRoomId &&
+            data.peerId === this.remotePeerId
+          ) {
+            this.closePeerConnection(false);
+          }
+        });
+
+        // Peer destroy and close event seem unreliable,
+        // so implement our own closing mechanism until the
+        // cause is found.
+        // self.localPeer.on("close", () => {
+        //   this.closePeerConnection();
+        // });
       });
 
       self.matchingSocket.on("connect_error", (error) => {
@@ -338,6 +374,10 @@ export default {
   },
 
   beforeDestroy() {
+    if (this.peerConnected) {
+      this.closePeerConnection();
+    }
+
     if (this.userCamStream) {
       this.userCamStream.getTracks().forEach((track) => track.stop());
     }
