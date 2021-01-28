@@ -112,7 +112,7 @@ const actions = {
     checkAuthAction({ commit }) {
         return new Promise((resolve) => {
             firebase.auth().onAuthStateChanged(user => {
-                if (user) {
+                if (user && user.emailVerified) {
                     commit("setUser", user)
                     resolve(user)
                 }
