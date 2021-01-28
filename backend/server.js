@@ -33,7 +33,6 @@ var userQueue = new Denque()
 var userQueueCache = new Set()
 
 var roomsHistory = {}
-var roomsLive = {}
 
 var tokenCache = {}
 
@@ -81,7 +80,7 @@ io.use(function (socket, next) {
 
 io.on('connection', function (socket) {
 
-    socket.on('search', function () {
+    socket.on('search', () => {
         if (!(userQueueCache.has(socket.uId))) {
             console.log('(', socket.id, ') SEARCH')
 
@@ -110,21 +109,21 @@ io.on('connection', function (socket) {
                     roomsHistory[socket.uId][frontOfQueue.uId] = Date.now()
                     roomsHistory[frontOfQueue.uId][socket.uId] = Date.now()
 
-                    socket.friendlyName = rug.generate()
-                    frontOfQueue.friendlyName = rug.generate()
-
                     const newRoomId = uuidv4()
-                    const initiatorId = socket.id
-                    const receiverId = frontOfQueue.id
-                    const initiatorFriendlyName = socket.friendlyName
-                    const receiverFriendlyName = frontOfQueue.friendlyName
+                    const initiatorFriendlyName = rug.generate()
+                    const receiverFriendlyName = rug.generate()
 
-                    roomsLive[newRoomId] = {
-                        [initiatorId]: socket,
-                        [receiverId]: frontOfQueue
-                    }
-                    socket.emit('connect_peer', { roomId: newRoomId, peerId: receiverId, peerFriendlyName: receiverFriendlyName, localFriendlyName: initiatorFriendlyName, isInitiator: true })
-                    frontOfQueue.emit('connect_peer', { roomId: newRoomId, peerId: initiatorId, peerFriendlyName: initiatorFriendlyName, localFriendlyName: receiverFriendlyName, isInitiator: false })
+                    socket.roomId = newRoomId
+                    frontOfQueue.roomId = newRoomId
+
+                    socket.join(newRoomId)
+                    frontOfQueue.join(newRoomId)
+
+                    socket.friendlyName = initiatorFriendlyName
+                    frontOfQueue.friendlyName = receiverFriendlyName
+
+                    socket.emit('connect_peer', { peerId: frontOfQueue.id, localFriendlyName: initiatorFriendlyName, peerFriendlyName: receiverFriendlyName, isInitiator: true })
+                    frontOfQueue.emit('connect_peer', { peerId: socket.id, localFriendlyName: receiverFriendlyName, peerFriendlyName: initiatorFriendlyName, isInitiator: false })
                 }
                 else {
                     userQueue.push(socket)
@@ -140,21 +139,28 @@ io.on('connection', function (socket) {
         }
     })
 
-    socket.on('signal_send', (data) => {
-        const senderPeerId = socket.id
-        console.log(socket.id, 'SIGNAL_SEND', data.roomId, data.destinationPeerId)
-        var peerSocket = roomsLive[data.roomId][data.destinationPeerId]
-        peerSocket.emit('signal_receive', { roomId: data.roomId, peerId: senderPeerId, signalData: data.signalData })
+    socket.on('signal', (data) => {
+        socket.to(socket.roomId).emit('signal', { signalData: data.signalData })
     })
 
-    socket.on('disconnect_peer', (data) => {
-        const senderPeerId = socket.id
-        console.log(socket.id, 'DISCONNECT_PEER', data.roomId, data.destinationPeerId)
-        var peerSocket = roomsLive[data.roomId][data.destinationPeerId]
-        peerSocket.emit('disconnect_peer', { roomId: data.roomId, peerId: senderPeerId })
+    socket.on('disconnect_peer', () => {
+        const roomId = socket.roomId
+        socket.to(roomId).emit('disconnect_peer')
+        io.sockets.in(roomId).sockets.forEach((socket) => {
+            socket.leave(roomId)
+            socket.roomId = null
+        })
     })
 
     socket.on('disconnect', () => {
+        if (socket.roomId) {
+            const roomId = socket.roomId
+            socket.to(roomId).emit('disconnect_peer')
+            io.sockets.in(roomId).sockets.forEach((socket) => {
+                socket.leave(roomId)
+                socket.roomId = null
+            })
+        }
         userQueueCache.delete(socket.uId)
         connectedUsers.delete(socket.uId)
     })

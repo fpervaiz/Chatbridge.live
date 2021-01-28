@@ -111,9 +111,6 @@ export default {
 
       localPeer: null,
 
-      currentRoomId: null,
-      localPeerId: null,
-      remotePeerId: null,
       localPeerFriendlyName: null,
       remotePeerFriendlyName: null,
 
@@ -127,6 +124,7 @@ export default {
       wsConnected: false,
       wsConnectionOverlay: true,
       wsConnectionError: "",
+      peerId: null,
       peerConnected: false,
       peerStatus: "paused",
 
@@ -195,10 +193,7 @@ export default {
 
     closePeerConnection(isInitiator) {
       if (isInitiator) {
-        this.matchingSocket.emit("disconnect_peer", {
-          roomId: this.currentRoomId,
-          destinationPeerId: this.remotePeerId,
-        });
+        this.matchingSocket.emit("disconnect_peer");
       }
 
       this.localPeer.destroy();
@@ -211,10 +206,9 @@ export default {
       this.peerCamStream = null;
       this.peerConnected = false;
       this.peerStatus = isInitiator ? "disconnectedInitiator" : "disconnected";
-      this.localPeerId = null;
-      this.remotePeerId = null;
       this.localPeerFriendlyName = null;
       this.remotePeerFriendlyName = null;
+      this.peerId = null;
       this.localPeer = null;
     },
 
@@ -265,18 +259,11 @@ export default {
         }
 
         self.matchingSocket.on("connect_peer", (data) => {
-          console.log(
-            "connecting to peer ",
-            data.peerId,
-            " room ",
-            data.roomId
-          );
+          console.log("connecting to peer ", data.peerId);
           self.peerStatus = "connecting";
-          self.localPeerId = self.matchingSocket.id;
-          self.remotePeerId = data.peerId;
+          self.peerId = data.peerId;
           self.localPeerFriendlyName = data.localFriendlyName;
           self.remotePeerFriendlyName = data.peerFriendlyName;
-          self.currentRoomId = data.roomId;
 
           self.localPeer = new Peer({
             initiator: data.isInitiator,
@@ -284,9 +271,7 @@ export default {
           });
 
           self.localPeer.on("signal", (signalData) => {
-            self.matchingSocket.emit("signal_send", {
-              roomId: self.currentRoomId,
-              destinationPeerId: self.remotePeerId,
+            self.matchingSocket.emit("signal", {
               signalData: signalData,
             });
           });
@@ -318,29 +303,12 @@ export default {
           });
         });
 
-        self.matchingSocket.on("signal_receive", (data) => {
-          if (
-            data.roomId === self.currentRoomId &&
-            data.peerId === self.remotePeerId
-          ) {
-            self.localPeer.signal(data.signalData);
-          } else {
-            console.log(
-              "unexpected signal data ",
-              data.roomId,
-              data.peerId,
-              data.signalData
-            );
-          }
+        self.matchingSocket.on("signal", (data) => {
+          self.localPeer.signal(data.signalData);
         });
 
-        self.matchingSocket.on("disconnect_peer", (data) => {
-          if (
-            data.roomId === this.currentRoomId &&
-            data.peerId === this.remotePeerId
-          ) {
-            this.closePeerConnection(false);
-          }
+        self.matchingSocket.on("disconnect_peer", () => {
+          this.closePeerConnection(false);
         });
 
         // Peer destroy and close event seem unreliable,
