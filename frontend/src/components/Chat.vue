@@ -2,7 +2,7 @@
   <v-container fluid class="my-2">
     <v-row class="mt-2 mb-5">
       <v-col justify="center" align="center"
-        ><v-btn @click="search" :disabled="!userCamStream || !wsConnected"
+        ><v-btn @click="search" :disabled="searchDisable"
           >Find New Caller
           <v-icon dark right> mdi-account-search </v-icon></v-btn
         ></v-col
@@ -121,6 +121,8 @@ export default {
       chatMessageInput: "",
       chatBox: null,
 
+      searchDisable: true,
+
       wsConnected: false,
       wsConnectionOverlay: true,
       wsConnectionError: "",
@@ -164,6 +166,7 @@ export default {
       if (this.userCamStream) {
         this.matchingSocket.emit("search");
         this.peerStatus = "searching";
+        this.searchDisable = true;
       }
     },
 
@@ -210,6 +213,8 @@ export default {
       this.remotePeerFriendlyName = null;
       this.peerId = null;
       this.localPeer = null;
+
+      this.searchDisable = false;
     },
 
     onHardClose() {
@@ -252,6 +257,7 @@ export default {
             })
             .then(function (stream) {
               self.userCamStream = stream;
+              self.searchDisable = false;
             })
             .catch(function (error) {
               console.log(error);
@@ -278,6 +284,7 @@ export default {
 
           self.localPeer.on("connect", () => {
             this.peerConnected = true;
+            this.searchDisable = false;
             console.log("connected to remotePeer!");
             this.chatMessages.push({
               sender: "_STATUS_GREEN",
@@ -321,6 +328,7 @@ export default {
 
       self.matchingSocket.on("connect_error", (error) => {
         console.log(error);
+        self.searchDisable = true;
         switch (error.message) {
           case "unauthorised": {
             this.wsConnectionError =
