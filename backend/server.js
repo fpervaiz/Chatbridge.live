@@ -14,7 +14,7 @@ const io = require('socket.io')(http, {
 
 const admin = require('firebase-admin')
 const { v4: uuidv4 } = require('uuid')
-const rug = require('random-username-generator')
+const generateName = require('sillyname')
 const Denque = require("denque")
 
 var firebaseConfig = process.env.FIREBASE_CONFIG ? JSON.parse(process.env.FIREBASE_CONFIG) : {
@@ -110,8 +110,8 @@ io.on('connection', function (socket) {
                     roomsHistory[frontOfQueue.uId][socket.uId] = Date.now()
 
                     const newRoomId = uuidv4()
-                    const initiatorFriendlyName = rug.generate()
-                    const receiverFriendlyName = rug.generate()
+                    const initiatorFriendlyName = generateName()
+                    const receiverFriendlyName = generateName()
 
                     socket.roomId = newRoomId
                     frontOfQueue.roomId = newRoomId
