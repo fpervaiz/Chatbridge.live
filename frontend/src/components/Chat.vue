@@ -7,6 +7,34 @@
           <v-icon dark right> mdi-account-search </v-icon></v-btn
         ></v-col
       >
+      <v-col justify="center" align="center">
+        <v-dialog v-model="blockConfirmDialog" persistent max-width="290">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              color="error"
+              v-bind="attrs"
+              v-on="on"
+              :disabled="!peerConnected"
+            >
+              Block/Report this User
+              <v-icon dark right> mdi-account-cancel </v-icon>
+            </v-btn>
+          </template>
+          <v-card>
+            <v-card-title class="headline"> Are you sure? </v-card-title>
+            <v-card-text
+              >You'll immediately be disconnected from this user.</v-card-text
+            >
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn color="primary" text @click="blockConfirmDialog = false">
+                No
+              </v-btn>
+              <v-btn color="error" text @click="blockReportPeer()"> Yes </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+      </v-col>
     </v-row>
     <v-row class="my-5">
       <v-col cols="6">
@@ -93,6 +121,63 @@
         >Connecting you to our matchmaking genie...</v-alert
       >
     </v-overlay>
+    <v-dialog v-model="blockReportDialog" persistent max-width="576">
+      <v-card>
+        <v-card-title class="headline">
+          Block/Report "{{ this.toBlockFriendlyName }}"
+        </v-card-title>
+        <v-card-text>
+          <v-form ref="blockReportForm" lazy-validation>
+            <v-checkbox v-model="blockReportFormData.toBlock"
+              ><template v-slot:label
+                ><v-col
+                  ><h3>Block this user</h3>
+                  <p>You will never be matched with this user again.</p></v-col
+                ></template
+              ></v-checkbox
+            >
+            <v-checkbox v-model="blockReportFormData.toReport"
+              ><template v-slot:label
+                ><v-col
+                  ><h3>Report this user</h3>
+                  <p>
+                    Please enter your reasons for reporting this user below.
+                  </p></v-col
+                ></template
+              ></v-checkbox
+            >
+            <v-textarea
+              v-model="blockReportFormData.reportReason"
+              label="Why would you like to report this user?"
+              placeholder="(e.g. inappropriate behaviour, camera turned off, not a student etc.)"
+              :required="blockReportFormData.toReport"
+              :disabled="!blockReportFormData.toReport"
+              :rules="blockReportFormData.toReport ? reasonRules : []"
+            ></v-textarea>
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="blockReportDialog = false">
+            Cancel
+          </v-btn>
+          <v-btn
+            color="error"
+            :disabled="
+              !(
+                blockReportFormData.toBlock ||
+                (blockReportFormData.toReport &&
+                  blockReportFormData.reportReason)
+              )
+            "
+            text
+            @click="submitForm"
+          >
+            Submit
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -122,6 +207,22 @@ export default {
       chatBox: null,
 
       searchDisable: true,
+      blockConfirmDialog: false,
+      blockReportDialog: false,
+
+      blockReportFormData: {
+        toBlock: false,
+        toReport: false,
+        reportReason: null,
+      },
+      reasonRules: [
+        (v) =>
+          (v && v.length >= 10) ||
+          "Reason must be at least 10 characters in length.",
+      ],
+
+      toBlockPeerId: null,
+      toBlockFriendlyName: null,
 
       wsConnected: false,
       wsConnectionOverlay: true,
@@ -191,6 +292,28 @@ export default {
         }
         this.chatBox.scrollTop =
           this.chatBox.scrollHeight - this.chatBox.clientHeight;
+      }
+    },
+
+    blockReportPeer() {
+      this.toBlockPeerId = this.peerId;
+      this.toBlockFriendlyName = this.remotePeerFriendlyName;
+
+      this.blockConfirmDialog = false;
+      this.closePeerConnection(true);
+
+      this.blockReportDialog = true;
+    },
+
+    submitForm() {
+      if (this.$refs.blockReportForm.validate()) {
+        this.matchingSocket.emit(
+          "block_report",
+          { peerId: this.toBlockPeerId, formData: this.blockReportFormData },
+          (response) => {
+            console.log(response.status);
+          }
+        );
       }
     },
 
