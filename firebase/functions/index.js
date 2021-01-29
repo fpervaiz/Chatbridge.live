@@ -58,3 +58,20 @@ exports.registerUser = functions.https.onCall((data, context) => {
             }
         })
 });
+
+exports.userDocOnCreate = functions.auth.user().onCreate((userRecord, context) => {
+
+    return admin.firestore().collection('users').doc(userRecord.uid)
+        .set({
+            email: userRecord.email,
+            displayName: userRecord.displayName
+        })
+        .catch(console.error)
+})
+
+exports.userDocOnDelete = functions.auth.user().onDelete((userRecord, context) => {
+
+    return admin.firestore().collection('users').doc(userRecord.uid)
+        .delete()
+        .catch(console.error)
+})
