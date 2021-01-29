@@ -32,6 +32,8 @@ var tokenCache = {}
 
 var connectedUsers = new Set()
 
+var idMap = {}
+
 app.get('/', (req, res) => {
     res.redirect('https://uniofcam.chat')
 })
@@ -46,6 +48,7 @@ io.use(function (socket, next) {
             }
             else {
                 connectedUsers.add(socket.uId)
+                idMap[socket.id] = socket.uId
                 next()
             }
         }
@@ -62,6 +65,7 @@ io.use(function (socket, next) {
                     else {
                         tokenCache[idToken] = decodedToken.uid
                         connectedUsers.add(socket.uId)
+                        idMap[socket.id] = socket.uId
                         next()
                     }
 
@@ -144,6 +148,40 @@ io.on('connection', function (socket) {
             socket.leave(roomId)
             socket.roomId = null
         })
+    })
+
+    socket.on('block_report', (data) => {
+        console.log(data)
+        // Looking up the socket by socket ID doesn't work if the
+        // socket we are looking for has since disconnected. For now,
+        // use a persistent map of socket ID -> user uID.
+        // 
+        // const uId = io.sockets.sockets.get(blockReportData.peerId).uId
+        //
+
+        const fromUid = socket.uId
+        const toUid = idMap[data.peerId]
+
+        const dateInt = Date.now()
+        const dateObj = admin.firestore.Timestamp.fromDate(new Date())
+
+        if (data.formData.toBlock) {
+            firebase.firestore().collection('users').doc(fromUid).set({ blocked: { [toUid]: dateObj } }, { merge: true })
+        }
+
+        if (data.formData.toReport) {
+
+            const report = {
+                [fromUid]: {
+                    [dateInt]: {
+                        time: dateObj,
+                        reason: data.formData.reportReason
+                    }
+                }
+            }
+
+            firebase.firestore().collection('users').doc(toUid).set({ reports: report }, { merge: true })
+        }
     })
 
     socket.on('disconnect', () => {
