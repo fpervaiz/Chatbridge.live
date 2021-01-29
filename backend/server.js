@@ -17,7 +17,7 @@ const { v4: uuidv4 } = require('uuid')
 const generateName = require('sillyname')
 const Denque = require("denque")
 
-var serviceAccount = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from(process.env.FIREBASE_CONFIG_B64, 'base64').toString('ascii')) : require("./firebaseSA.json")
+var serviceAccount = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from(process.env.FIREBASE_CONFIG_B64, 'base64').toString('ascii')) : require("./firebaseSA.credential.json")
 
 var firebase = admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
