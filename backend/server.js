@@ -150,7 +150,7 @@ io.on('connection', function (socket) {
         })
     })
 
-    socket.on('block_report', (data) => {
+    socket.on('block_report', (data, callback) => {
         console.log(data)
         // Looking up the socket by socket ID doesn't work if the
         // socket we are looking for has since disconnected. For now,
@@ -166,7 +166,17 @@ io.on('connection', function (socket) {
         const dateObj = admin.firestore.Timestamp.fromDate(new Date())
 
         if (data.formData.toBlock) {
-            firebase.firestore().collection('users').doc(fromUid).set({ blocked: { [toUid]: dateObj } }, { merge: true })
+            firebase.firestore().collection('users').doc(fromUid)
+                .set({ blocked: { [toUid]: dateObj } }, { merge: true })
+                .then(() => {
+                    console.log('Set block for', toUid, 'from', fromUid);
+                })
+                .catch((error) => {
+                    console.log('Error setting firestore block', error);
+                    callback({
+                        status: 'error'
+                    })
+                })
         }
 
         if (data.formData.toReport) {
@@ -180,8 +190,22 @@ io.on('connection', function (socket) {
                 }
             }
 
-            firebase.firestore().collection('users').doc(toUid).set({ reports: report }, { merge: true })
+            firebase.firestore().collection('users').doc(toUid)
+                .set({ reports: report }, { merge: true })
+                .then(() => {
+                    console.log('Set report for', toUid, 'from', fromUid);
+                })
+                .catch((error) => {
+                    console.log('Error setting firestore report', error);
+                    callback({
+                        status: 'error'
+                    })
+                })
         }
+
+        callback({
+            status: 'ok'
+        })
     })
 
     socket.on('disconnect', () => {
