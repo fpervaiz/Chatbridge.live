@@ -247,6 +247,7 @@ io.on('connection', function (socket) {
                 socket.roomId = null
             })
         }
+        delete userBlocks[socket.uId]
         userQueueCache.delete(socket.uId)
         connectedUsers.delete(socket.uId)
     })
