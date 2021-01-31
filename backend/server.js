@@ -190,6 +190,12 @@ io.on('connection', function (socket) {
         const dateObj = admin.firestore.Timestamp.fromDate(new Date())
 
         if (data.formData.toBlock) {
+            if (!(fromUid in userBlocks)) {
+                userBlocks[fromUid] = {}
+            }
+
+            userBlocks[fromUid][toUid] = Date()
+
             firebase.firestore().collection('users').doc(fromUid)
                 .set({ blocked: { [toUid]: dateObj } }, { merge: true })
                 .then(() => {
