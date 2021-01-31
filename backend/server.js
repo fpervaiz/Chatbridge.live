@@ -25,6 +25,7 @@ var firebase = admin.initializeApp({
 
 var userQueue = new Denque()
 var userQueueCache = new Set()
+var userBlocks = {}
 
 var roomsHistory = {}
 
@@ -49,7 +50,17 @@ io.use(function (socket, next) {
             else {
                 connectedUsers.add(socket.uId)
                 idMap[socket.id] = socket.uId
-                next()
+                firebase.firestore().collection('users').doc(socket.uId).get()
+                    .then((doc) => {
+                        const data = doc.data()
+                        if (data.blocked) {
+                            userBlocks[socket.uId] = data.blocked
+                        }
+                        next()
+                    })
+                    .catch((error) => {
+                        console.log('error retreiving', socket.uId, 'blocks from firebase', error)
+                    })
             }
         }
         else {
@@ -66,7 +77,17 @@ io.use(function (socket, next) {
                         tokenCache[idToken] = decodedToken.uid
                         connectedUsers.add(socket.uId)
                         idMap[socket.id] = socket.uId
-                        next()
+                        firebase.firestore().collection('users').doc(socket.uId).get()
+                            .then((doc) => {
+                                const data = doc.data()
+                                if (data.blocked) {
+                                    userBlocks[socket.uId] = data.blocked
+                                }
+                                next()
+                            })
+                            .catch((error) => {
+                                console.log('error retreiving', socket.uId, 'blocks from firebase', error)
+                            })
                     }
 
                 })
@@ -91,7 +112,10 @@ io.on('connection', function (socket) {
             }
 
             if (frontOfQueue) {
-                if (!roomsHistory[socket.uId] || !roomsHistory[socket.uId][frontOfQueue.uId] || Date.now() - roomsHistory[socket.uId][frontOfQueue.uId] >= 1800000) {
+                const notRecent = !roomsHistory[socket.uId] || !roomsHistory[socket.uId][frontOfQueue.uId] || Date.now() - roomsHistory[socket.uId][frontOfQueue.uId] >= 1800000
+                const notBlocked = !(socket.uId in userBlocks && frontOfQueue.uId in userBlocks[socket.uId])
+
+                if (notRecent && notBlocked) {
                     console.log('Found match for ', socket.id, ' (', frontOfQueue.id, ')')
 
                     userQueueCache.delete(userQueue.shift().uId)
