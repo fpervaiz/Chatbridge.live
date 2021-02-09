@@ -113,7 +113,7 @@ io.on('connection', function (socket) {
 
             if (frontOfQueue) {
                 const notRecent = !roomsHistory[socket.uId] || !roomsHistory[socket.uId][frontOfQueue.uId] || Date.now() - roomsHistory[socket.uId][frontOfQueue.uId] >= 1800000
-                const notBlocked = !(socket.uId in userBlocks && frontOfQueue.uId in userBlocks[socket.uId])
+                const notBlocked = !(socket.uId in userBlocks && frontOfQueue.uId in userBlocks[socket.uId]) && !(frontOfQueue.uId in userBlocks && socket.uId in userBlocks[frontOfQueue.uId])
 
                 if (notRecent && notBlocked) {
                     console.log('Found match for ', socket.id, ' (', frontOfQueue.id, ')')

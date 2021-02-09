@@ -8,32 +8,21 @@
         ></v-col
       >
       <v-col justify="center" align="center">
-        <v-dialog v-model="blockConfirmDialog" persistent max-width="290">
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              color="error"
-              v-bind="attrs"
-              v-on="on"
-              :disabled="!peerConnected"
-            >
-              Block/Report this User
-              <v-icon dark right> mdi-account-cancel </v-icon>
-            </v-btn>
-          </template>
-          <v-card>
-            <v-card-title class="headline"> Are you sure? </v-card-title>
-            <v-card-text
-              >You'll immediately be disconnected from this user.</v-card-text
-            >
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn color="primary" text @click="blockConfirmDialog = false">
-                No
-              </v-btn>
-              <v-btn color="error" text @click="blockReportPeer()"> Yes </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
+        <v-btn
+          color="error"
+          @click="
+            () => {
+              this.peerConnected
+                ? (this.blockConfirmDialog = true)
+                : blockReportPeer();
+            }
+          "
+          :disabled="!this.peerId || !this.remotePeerFriendlyName"
+        >
+          Block/Report <template v-if="peerConnected">this</template
+          ><template v-else>last</template> User
+          <v-icon dark right> mdi-account-cancel </v-icon>
+        </v-btn>
       </v-col>
     </v-row>
     <v-row class="my-5">
@@ -121,6 +110,21 @@
         >Connecting you to our matchmaking genie...</v-alert
       >
     </v-overlay>
+    <v-dialog v-model="blockConfirmDialog" persistent max-width="576">
+      <v-card>
+        <v-card-title class="headline"> Are you sure? </v-card-title>
+        <v-card-text
+          >You'll immediately be disconnected from this user.</v-card-text
+        >
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="blockConfirmDialog = false">
+            No
+          </v-btn>
+          <v-btn color="error" text @click="blockReportPeer()"> Yes </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-dialog v-model="blockReportDialog" persistent max-width="576">
       <v-card>
         <v-card-title class="headline">
@@ -178,6 +182,12 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-snackbar v-model="blockSuccessBar" :timeout="4000" color="success"
+      >Submitted successfully.</v-snackbar
+    >
+    <v-snackbar v-model="blockErrorBar" :timeout="4000" color="error"
+      >Error submitting. Please try again.</v-snackbar
+    >
   </v-container>
 </template>
 
@@ -209,6 +219,8 @@ export default {
       searchDisable: true,
       blockConfirmDialog: false,
       blockReportDialog: false,
+      blockSuccessBar: false,
+      blockReportBar: false,
 
       blockReportFormData: {
         toBlock: false,
@@ -265,6 +277,9 @@ export default {
       }
 
       if (this.userCamStream) {
+        this.remotePeerFriendlyName = null;
+        this.peerId = null;
+
         this.matchingSocket.emit("search");
         this.peerStatus = "searching";
         this.searchDisable = true;
@@ -300,7 +315,9 @@ export default {
       this.toBlockFriendlyName = this.remotePeerFriendlyName;
 
       this.blockConfirmDialog = false;
-      this.closePeerConnection(true);
+      if (this.peerConnected) {
+        this.closePeerConnection(true);
+      }
 
       this.blockReportDialog = true;
     },
@@ -311,7 +328,18 @@ export default {
           "block_report",
           { peerId: this.toBlockPeerId, formData: this.blockReportFormData },
           (response) => {
-            console.log(response.status);
+            switch (response.status) {
+              case "ok": {
+                this.blockReportDialog = false;
+                this.$refs.blockReportForm.reset();
+                this.blockSuccessBar = true;
+                break;
+              }
+              case "error": {
+                this.blockFailureBar = true;
+                break;
+              }
+            }
           }
         );
       }
@@ -333,8 +361,6 @@ export default {
       this.peerConnected = false;
       this.peerStatus = isInitiator ? "disconnectedInitiator" : "disconnected";
       this.localPeerFriendlyName = null;
-      this.remotePeerFriendlyName = null;
-      this.peerId = null;
       this.localPeer = null;
 
       this.searchDisable = false;
