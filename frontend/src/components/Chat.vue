@@ -2,7 +2,7 @@
   <v-container fluid class="my-2">
     <v-row class="mt-2 mb-5">
       <v-col justify="center" align="center"
-        ><v-btn @click="search" :disabled="searchDisable"
+        ><v-btn @click="search" :disabled="!enableSearch"
           >Find New Caller
           <v-icon dark right> mdi-account-search </v-icon></v-btn
         ></v-col
@@ -12,14 +12,14 @@
           color="error"
           @click="
             () => {
-              this.peerConnected
+              showBlockThisUser
                 ? (this.blockConfirmDialog = true)
                 : blockReportPeer();
             }
           "
-          :disabled="!this.peerId || !this.remotePeerFriendlyName"
+          :disabled="!enableBlock"
         >
-          Block/Report <template v-if="peerConnected">this</template
+          Block/Report <template v-if="showBlockThisUser">this</template
           ><template v-else>last</template> User
           <v-icon dark right> mdi-account-cancel </v-icon>
         </v-btn>
@@ -28,13 +28,11 @@
     <v-row class="my-5">
       <v-col cols="6">
         <h4>
-          Who?<span v-if="this.remotePeerFriendlyName && this.peerConnected">
-            ({{ this.remotePeerFriendlyName }})</span
-          >
+          Who?<span v-if="showRemoteName"> ({{ showRemoteName }})</span>
         </h4>
         <div v-if="!peerCamStream">
-          <h2>{{ peerStatusMessages[peerStatus].heading }}</h2>
-          <p>{{ peerStatusMessages[peerStatus].subtitle }}</p>
+          <h2>{{ peerStatusHeading }}</h2>
+          <p>{{ peerStatusMessage }}</p>
         </div>
         <video
           width="512"
@@ -45,9 +43,7 @@
         ></video>
 
         <h4>
-          You<span v-if="this.localPeerFriendlyName && this.peerConnected">
-            ({{ this.localPeerFriendlyName }})</span
-          >
+          You<span v-if="showLocalName"> ({{ showLocalName }})</span>
         </h4>
         <div v-if="!userCamStream">
           <h2>No webcam found!</h2>
@@ -97,7 +93,7 @@
         ></v-text-field>
       </v-col>
     </v-row>
-    <v-overlay v-if="wsConnectionOverlay && !peerConnected">
+    <v-overlay v-if="showWsOverlay">
       <v-alert v-if="wsConnectionError" type="error">{{
         this.wsConnectionError
       }}</v-alert>
@@ -196,11 +192,26 @@ import io from "socket.io-client";
 import Peer from "simple-peer";
 import Autolinker from "autolinker";
 
+const appStates = {
+  WS_CONNECTING: 1,
+  STARTING: 2,
+  READY: 3,
+  SEARCHING: 4,
+  CONNECTING: 5,
+  CONNECTED: 6,
+  DISCONNECTED: 7,
+  DISCONNECTED_INITIATOR: 8,
+  WS_ERROR: 9,
+  ERROR: 10,
+};
+
 export default {
   name: "Chat",
 
   data() {
     return {
+      appState: appStates.WS_CONNECTING,
+
       matchingSocket: null,
       signalingSocket: null,
 
@@ -216,11 +227,10 @@ export default {
       chatMessageInput: "",
       chatBox: null,
 
-      searchDisable: true,
       blockConfirmDialog: false,
       blockReportDialog: false,
       blockSuccessBar: false,
-      blockReportBar: false,
+      blockErrorBar: false,
 
       blockReportFormData: {
         toBlock: false,
@@ -237,42 +247,113 @@ export default {
       toBlockFriendlyName: null,
 
       wsConnected: false,
-      wsConnectionOverlay: true,
       wsConnectionError: "",
-      peerId: null,
-      peerConnected: false,
-      peerStatus: "paused",
 
-      peerStatusMessages: {
-        paused: {
-          heading: "Paused.",
-          subtitle: "Hit 'Find' to get going.",
-        },
-        searching: {
-          heading: "Searching...",
-          subtitle: "Finding you someone...",
-        },
-        connecting: {
-          heading: "Connecting...",
-          subtitle: "Prepare your opening line!",
-        },
-        disconnected: {
-          heading: "Disconnected.",
-          subtitle: "The other person has left the chat.",
-        },
-        disconnectedInitiator: {
-          heading: "Disconnected.",
-          subtitle: "You left the chat.",
-        },
-      },
+      peerId: null,
 
       autolinker: new Autolinker(),
     };
   },
 
+  computed: {
+    enableSearch() {
+      return (
+        this.appState === appStates.READY ||
+        this.appState === appStates.CONNECTED ||
+        this.appState === appStates.DISCONNECTED ||
+        this.appState === appStates.DISCONNECTED_INITIATOR
+      );
+    },
+
+    showWsOverlay() {
+      return (
+        this.appState === appStates.WS_CONNECTING ||
+        this.appState === appStates.WS_ERROR
+      );
+    },
+
+    enableBlock() {
+      return (
+        this.appState === appStates.CONNECTED ||
+        this.appState === appStates.DISCONNECTED ||
+        this.appState === appStates.DISCONNECTED_INITIATOR
+      );
+    },
+
+    showLocalName() {
+      if (this.appState === appStates.CONNECTED) {
+        return this.localPeerFriendlyName;
+      } else {
+        return false;
+      }
+    },
+
+    showRemoteName() {
+      if (this.appState === appStates.CONNECTED) {
+        return this.remotePeerFriendlyName;
+      } else {
+        return false;
+      }
+    },
+
+    showBlockThisUser() {
+      return this.appState === appStates.CONNECTED;
+    },
+
+    showBlockLastUser() {
+      return this.appState === appStates.DISCONNECTED;
+    },
+
+    peerStatusHeading() {
+      switch (this.appState) {
+        case appStates.READY: {
+          return "Paused.";
+        }
+        case appStates.SEARCHING: {
+          return "Searching...";
+        }
+        case appStates.CONNECTING: {
+          return "Connecting...";
+        }
+        case appStates.DISCONNECTED: {
+          return "Disconnected.";
+        }
+        case appStates.DISCONNECTED_INITIATOR: {
+          return "Disconnected.";
+        }
+        default: {
+          return null;
+        }
+      }
+    },
+
+    peerStatusMessage() {
+      switch (this.appState) {
+        case appStates.READY: {
+          return "Hit 'Find' to get going.";
+        }
+        case appStates.SEARCHING: {
+          return "Finding you someone...";
+        }
+        case appStates.CONNECTING: {
+          return "Prepare your opening line!";
+        }
+        case appStates.DISCONNECTED: {
+          return "The other person has left the chat.";
+        }
+        case appStates.DISCONNECTED_INITIATOR: {
+          return "You left the chat.";
+        }
+        default: {
+          return null;
+        }
+      }
+    },
+  },
+
   methods: {
     search() {
-      if (this.peerConnected) {
+      if (this.appStates === appStates.CONNECTED) {
         this.closePeerConnection(true);
       }
 
@@ -281,14 +362,13 @@ export default {
         this.peerId = null;
 
         this.matchingSocket.emit("search");
-        this.peerStatus = "searching";
-        this.searchDisable = true;
+        this.appState = appStates.SEARCHING;
       }
     },
 
     sendChatMessage() {
       if (this.chatMessageInput.length > 0) {
-        if (this.peerConnected) {
+        if (this.appState === appStates.CONNECTED) {
           const chatMessage = {
             type: "chatMessage",
             chatMessage: {
@@ -315,7 +395,7 @@ export default {
       this.toBlockFriendlyName = this.remotePeerFriendlyName;
 
       this.blockConfirmDialog = false;
-      if (this.peerConnected) {
+      if (this.appState === appStates.CONNECTED) {
         this.closePeerConnection(true);
       }
 
@@ -336,7 +416,7 @@ export default {
                 break;
               }
               case "error": {
-                this.blockFailureBar = true;
+                this.blockErrorBar = true;
                 break;
               }
             }
@@ -358,16 +438,20 @@ export default {
       });
 
       this.peerCamStream = null;
-      this.peerConnected = false;
-      this.peerStatus = isInitiator ? "disconnectedInitiator" : "disconnected";
       this.localPeerFriendlyName = null;
       this.localPeer = null;
 
-      this.searchDisable = false;
+      if (this.wsConnectionError) {
+        this.appState = appStates.WS_ERROR;
+      } else {
+        this.appState = isInitiator
+          ? appStates.DISCONNECTED_INITIATOR
+          : appStates.DISCONNECTED;
+      }
     },
 
     onHardClose() {
-      if (this.peerConnected) {
+      if (this.appState === appStates.CONNECTED) {
         this.closePeerConnection(true);
       }
 
@@ -394,8 +478,8 @@ export default {
       self.matchingSocket.on("connect", () => {
         console.log("matching connected ", self.matchingSocket.id);
         document.addEventListener("beforeunload", this.onHardClose);
+        self.appState = appStates.STARTING;
         self.wsConnected = true;
-        self.wsConnectionOverlay = false;
         self.wsConnectionError = "";
 
         if (navigator.mediaDevices.getUserMedia) {
@@ -406,16 +490,17 @@ export default {
             })
             .then(function (stream) {
               self.userCamStream = stream;
-              self.searchDisable = false;
+              self.appState = appStates.READY;
             })
             .catch(function (error) {
               console.log(error);
+              self.appState = appStates.ERROR;
             });
         }
 
         self.matchingSocket.on("connect_peer", (data) => {
           console.log("connecting to peer ", data.peerId);
-          self.peerStatus = "connecting";
+          self.appState = appStates.CONNECTING;
           self.peerId = data.peerId;
           self.localPeerFriendlyName = data.localFriendlyName;
           self.remotePeerFriendlyName = data.peerFriendlyName;
@@ -432,8 +517,7 @@ export default {
           });
 
           self.localPeer.on("connect", () => {
-            this.peerConnected = true;
-            this.searchDisable = false;
+            this.appState = appStates.CONNECTED;
             console.log("connected to remotePeer!");
             this.chatMessages.push({
               sender: "_STATUS_GREEN",
@@ -476,8 +560,11 @@ export default {
       });
 
       self.matchingSocket.on("connect_error", (error) => {
+        if (self.appState !== appStates.CONNECTED) {
+          self.appState = appStates.WS_ERROR;
+        }
+        self.wsConnected = false;
         console.log(error);
-        self.searchDisable = true;
         switch (error.message) {
           case "unauthorised": {
             this.wsConnectionError =
@@ -493,13 +580,12 @@ export default {
             this.wsConnectionError =
               "Looks like our matchmaking genie has gone missing. Please try again later.";
         }
-        this.wsConnectionOverlay = true;
       });
     });
   },
 
   beforeDestroy() {
-    if (this.peerConnected) {
+    if (this.appState == appStates.CONNECTED) {
       this.closePeerConnection();
     }
 
@@ -507,9 +593,13 @@ export default {
       this.userCamStream.getTracks().forEach((track) => track.stop());
     }
 
+    if (this.wsConnected) {
+      this.matchingSocket.disconnect();
+      this.wsConnected = false;
+      console.log("Disconnected matching");
+    }
+
     document.removeEventListener("beforeunload", this.onHardClose);
-    this.matchingSocket.disconnect();
-    console.log("Disconnected matching");
   },
 };
 </script>
