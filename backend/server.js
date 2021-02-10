@@ -64,7 +64,7 @@ io.use(function (socket, next) {
             }
         }
         else {
-            firebase.auth().verifyIdToken(idToken)
+            firebase.auth().verifyIdToken(idToken, true)
                 .catch((error) => {
                     console.log('Firebase error', error)
                     next(new Error('unauthorised'))
@@ -74,7 +74,7 @@ io.use(function (socket, next) {
                         next(new Error('already_connected'))
                     }
                     else {
-                        tokenCache[idToken] = decodedToken.uid
+                        //tokenCache[idToken] = decodedToken.uid
                         connectedUsers.add(socket.uId)
                         idMap[socket.id] = socket.uId
                         firebase.firestore().collection('users').doc(socket.uId).get()
@@ -199,10 +199,10 @@ io.on('connection', function (socket) {
             firebase.firestore().collection('users').doc(fromUid)
                 .set({ blocked: { [toUid]: dateObj } }, { merge: true })
                 .then(() => {
-                    console.log('Set block for', toUid, 'from', fromUid);
+                    console.log('Set block for', toUid, 'from', fromUid)
                 })
                 .catch((error) => {
-                    console.log('Error setting firestore block', error);
+                    console.log('Error setting firestore block', error)
                     callback({
                         status: 'error'
                     })
@@ -228,11 +228,11 @@ io.on('connection', function (socket) {
                 }
                 firebase.firestore().collection('users').doc(toUid)
                     .set({ reports: reportRef }, { merge: true }).then(() => {
-                        console.log('Set report for', toUid, 'from', fromUid);
+                        console.log('Set report for', toUid, 'from', fromUid)
                     })
             })
                 .catch((error) => {
-                    console.log('Error setting firestore report', error);
+                    console.log('Error setting firestore report', error)
                     callback({
                         status: 'error'
                     })
