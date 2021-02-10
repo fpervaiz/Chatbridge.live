@@ -9,7 +9,7 @@
         <h2 class="subheading font-weight-regular">Simple, safe, secure.</h2>
         <hr class="my-5" />
         <p>
-          Only verified University of Cambridge students can use UniOfCam.Chat.
+          Only verified University of Cambridge students can use Chatbridge.
         </p>
         <v-btn to="/chat" class="mx-2" color="primary">Start chatting</v-btn>
         <v-btn to="/register" class="mx-2" color="secondary">Sign up</v-btn>

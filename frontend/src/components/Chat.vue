@@ -578,7 +578,7 @@ export default {
           }
           case "already_connected": {
             this.wsConnectionError =
-              "You have UniOfCam.Chat open in another tab. Please close it and try again.";
+              "You have Chatbridge open in another tab. Please close it and try again.";
             break;
           }
           default:

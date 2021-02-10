@@ -13,7 +13,7 @@
     </v-container>
     <!--
     <v-col class="py-1 text-center white--text" cols="12">
-      &copy; {{ new Date().getFullYear() }} — <strong>uniofcam.chat</strong>
+      &copy; {{ new Date().getFullYear() }} — <strong>chatbridge.live</strong>
     </v-col>
     -->
   </v-footer>
