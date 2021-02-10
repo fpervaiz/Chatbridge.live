@@ -210,6 +210,10 @@ io.on('connection', function (socket) {
         }
 
         if (data.formData.toReport) {
+            var reportedSocket = io.sockets.sockets.get(data.peerId)
+            if (reportedSocket) {
+                reportedSocket.emit("force_logout");
+            }
 
             const report = {
                 reported: toUid,

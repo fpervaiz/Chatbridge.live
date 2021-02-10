@@ -559,12 +559,17 @@ export default {
         // });
       });
 
+      self.matchingSocket.on("force_logout", () => {
+        this.$store.dispatch("logoutUserAction").then(() => {
+          this.$router.replace("/");
+        });
+      });
+
       self.matchingSocket.on("connect_error", (error) => {
         if (self.appState !== appStates.CONNECTED) {
           self.appState = appStates.WS_ERROR;
         }
         self.wsConnected = false;
-        console.log(error);
         switch (error.message) {
           case "unauthorised": {
             this.wsConnectionError =
