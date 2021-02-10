@@ -36,7 +36,7 @@ var connectedUsers = new Set()
 var idMap = {}
 
 app.get('/', (req, res) => {
-    res.redirect('https://uniofcam.chat')
+    res.redirect('https://chatbridge.live')
 })
 
 io.use(function (socket, next) {
