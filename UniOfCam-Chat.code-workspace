@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "firebase"
+		},
+		{
+			"path": "."
 		}
 	]
 }
