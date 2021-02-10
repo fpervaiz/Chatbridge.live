@@ -75,5 +75,6 @@ exports.reportDocOnCreate = functions.firestore.document("reports/{reportId}").o
   const reportedUid = snap.data().reported;
   return admin.auth().updateUser(reportedUid, {disabled: true}).then(() => {
     console.log("Successfully disabled user", reportedUid, "from report", snap.id);
-  });
+  })
+      .catch(console.error);
 });
