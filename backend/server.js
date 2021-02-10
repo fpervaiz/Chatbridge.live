@@ -212,19 +212,21 @@ io.on('connection', function (socket) {
         if (data.formData.toReport) {
 
             const report = {
-                [fromUid]: {
-                    [dateInt]: {
-                        time: dateObj,
-                        reason: data.formData.reportReason
-                    }
-                }
+                reported: toUid,
+                from: fromUid,
+                time: dateObj,
+                reason: data.formData.reportReason
             }
 
-            firebase.firestore().collection('users').doc(toUid)
-                .set({ reports: report }, { merge: true })
-                .then(() => {
-                    console.log('Set report for', toUid, 'from', fromUid);
-                })
+            firebase.firestore().collection('reports').add(report).then((docRef) => {
+                const reportRef = {
+                    [dateInt]: docRef
+                }
+                firebase.firestore().collection('users').doc(toUid)
+                    .set({ reports: reportRef }, { merge: true }).then(() => {
+                        console.log('Set report for', toUid, 'from', fromUid);
+                    })
+            })
                 .catch((error) => {
                     console.log('Error setting firestore report', error);
                     callback({
