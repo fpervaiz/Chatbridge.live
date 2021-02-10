@@ -68,10 +68,23 @@ const actions = {
                             });
                     }
                 })
-                .catch(() => {
+                .catch((error) => {
                     let message = {
                         type: "error",
-                        text: "Incorrect username or password.",
+                        text: "",
+                    }
+                    switch (error.code) {
+                        case "auth/user-disabled": {
+                            message.text = "Your account has temporarily been suspended. Please try again later."
+                            break;
+                        }
+                        case "auth/wrong-password": {
+                            message.text = "Incorrect username or password."
+                            break;
+                        }
+                        default: {
+                            message.text = "Error logging in. Please try again later."
+                        }
                     }
                     commit("setMessage", message)
                     reject(message)
