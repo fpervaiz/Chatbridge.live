@@ -29,8 +29,6 @@ var userBlocks = {}
 
 var roomsHistory = {}
 
-var tokenCache = {}
-
 var connectedUsers = new Set()
 
 var idMap = {}
@@ -42,56 +40,35 @@ app.get('/', (req, res) => {
 io.use(function (socket, next) {
     const idToken = socket.handshake.auth.idToken
     if (idToken) {
-        if (idToken in tokenCache) {
-            socket.uId = tokenCache[idToken]
-            if (connectedUsers.has(socket.uId)) {
-                next(new Error('already_connected'))
-            }
-            else {
-                connectedUsers.add(socket.uId)
-                idMap[socket.id] = socket.uId
-                firebase.firestore().collection('users').doc(socket.uId).get()
-                    .then((doc) => {
-                        const data = doc.data()
-                        if (data.blocked) {
-                            userBlocks[socket.uId] = data.blocked
-                        }
-                        next()
-                    })
-                    .catch((error) => {
-                        console.log('error retreiving', socket.uId, 'blocks from firebase', error)
-                    })
-            }
-        }
-        else {
-            firebase.auth().verifyIdToken(idToken, true)
-                .catch((error) => {
-                    console.log('Firebase error', error)
+        firebase.auth().verifyIdToken(idToken, true)
+            .catch((error) => {
+                console.log('Firebase error', error)
+                next(new Error('unauthorised'))
+            }).then((decodedToken) => {
+                socket.uId = decodedToken.uid
+                if (connectedUsers.has(socket.uId)) {
+                    next(new Error('already_connected'))
+                }
+                else if (!decodedToken.email.toLowerCase().endsWith('@cam.ac.uk')) {
                     next(new Error('unauthorised'))
-                }).then((decodedToken) => {
-                    socket.uId = decodedToken.uid
-                    if (connectedUsers.has(socket.uId)) {
-                        next(new Error('already_connected'))
-                    }
-                    else {
-                        //tokenCache[idToken] = decodedToken.uid
-                        connectedUsers.add(socket.uId)
-                        idMap[socket.id] = socket.uId
-                        firebase.firestore().collection('users').doc(socket.uId).get()
-                            .then((doc) => {
-                                const data = doc.data()
-                                if (data.blocked) {
-                                    userBlocks[socket.uId] = data.blocked
-                                }
-                                next()
-                            })
-                            .catch((error) => {
-                                console.log('error retreiving', socket.uId, 'blocks from firebase', error)
-                            })
-                    }
+                }
+                else {
+                    connectedUsers.add(socket.uId)
+                    idMap[socket.id] = socket.uId
+                    firebase.firestore().collection('users').doc(socket.uId).get()
+                        .catch((error) => {
+                            console.log('error retreiving', socket.uId, 'blocks from firebase', error)
+                        })
+                        .then((doc) => {
+                            const data = doc.data()
+                            if (data.blocked) {
+                                userBlocks[socket.uId] = data.blocked
+                            }
+                            next()
+                        })
+                }
 
-                })
-        }
+            })
     } else {
         next(new Error('unauthorised'))
     }
