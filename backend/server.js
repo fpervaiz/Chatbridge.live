@@ -151,6 +151,11 @@ io.on('connection', function (socket) {
         })
     })
 
+    socket.on('handle_peer_error', () => {
+        socket.leave(socket.roomId)
+        socket.roomId = null
+    })
+
     socket.on('block_report', (data, callback) => {
         console.log(data)
         // Looking up the socket by socket ID doesn't work if the

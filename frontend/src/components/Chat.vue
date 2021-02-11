@@ -30,7 +30,7 @@
         <h4>
           Who?<span v-if="showRemoteName"> ({{ showRemoteName }})</span>
         </h4>
-        <div v-if="!peerCamStream">
+        <div v-if="!showPeerStream">
           <h2>{{ peerStatusHeading }}</h2>
           <p>{{ peerStatusMessage }}</p>
         </div>
@@ -201,8 +201,9 @@ const appStates = {
   CONNECTED: 6,
   DISCONNECTED: 7,
   DISCONNECTED_INITIATOR: 8,
-  WS_ERROR: 9,
-  ERROR: 10,
+  DISCONNECTED_ERROR: 9,
+  WS_ERROR: 10,
+  ERROR: 11,
 };
 
 export default {
@@ -261,7 +262,8 @@ export default {
         this.appState === appStates.READY ||
         this.appState === appStates.CONNECTED ||
         this.appState === appStates.DISCONNECTED ||
-        this.appState === appStates.DISCONNECTED_INITIATOR
+        this.appState === appStates.DISCONNECTED_INITIATOR ||
+        this.appState === appStates.DISCONNECTED_ERROR
       );
     },
 
@@ -276,7 +278,8 @@ export default {
       return (
         this.appState === appStates.CONNECTED ||
         this.appState === appStates.DISCONNECTED ||
-        this.appState === appStates.DISCONNECTED_INITIATOR
+        this.appState === appStates.DISCONNECTED_INITIATOR ||
+        this.appState === appStates.DISCONNECTED_ERROR
       );
     },
 
@@ -304,6 +307,10 @@ export default {
       return this.appState === appStates.DISCONNECTED;
     },
 
+    showPeerStream() {
+      return this.appState === appStates.CONNECTED && this.peerCamStream;
+    },
+
     peerStatusHeading() {
       switch (this.appState) {
         case appStates.READY: {
@@ -319,6 +326,9 @@ export default {
           return "Disconnected.";
         }
         case appStates.DISCONNECTED_INITIATOR: {
+          return "Disconnected.";
+        }
+        case appStates.DISCONNECTED_ERROR: {
           return "Disconnected.";
         }
         default: {
@@ -343,6 +353,9 @@ export default {
         }
         case appStates.DISCONNECTED_INITIATOR: {
           return "You left the chat.";
+        }
+        case appStates.DISCONNECTED_ERROR: {
+          return "Connection failed. Please try again.";
         }
         default: {
           return null;
@@ -438,7 +451,6 @@ export default {
       });
 
       this.peerCamStream = null;
-      this.localPeerFriendlyName = null;
       this.localPeer = null;
 
       if (this.wsConnectionError) {
@@ -448,6 +460,19 @@ export default {
           ? appStates.DISCONNECTED_INITIATOR
           : appStates.DISCONNECTED;
       }
+    },
+
+    handlePeerError() {
+      this.matchingSocket.emit("handle_peer_error");
+      if (!this.localPeer.destroyed) {
+        this.localPeer.destroy();
+      }
+      this.peerCamStream = null;
+      this.localPeer = null;
+
+      this.appState = this.wsConnectionError
+        ? appStates.WS_ERROR
+        : appStates.DISCONNECTED_ERROR;
     },
 
     onHardClose() {
@@ -510,6 +535,12 @@ export default {
             stream: this.userCamStream,
           });
 
+          setTimeout(() => {
+            if (this.appStates !== appStates.CONNECTED) {
+              this.handlePeerError();
+            }
+          }, 20000);
+
           self.localPeer.on("signal", (signalData) => {
             self.matchingSocket.emit("signal", {
               signalData: signalData,
@@ -540,6 +571,7 @@ export default {
 
           self.localPeer.on("error", (err) => {
             console.log(err);
+            self.handlePeerError();
           });
         });
 
