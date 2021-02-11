@@ -59,9 +59,6 @@
 </template>
 
 <script>
-import firebase from "firebase/app";
-import "firebase/auth";
-
 export default {
   name: "Login",
 
@@ -83,13 +80,6 @@ export default {
 
     passwordRules: [(v) => !!v || "Password is required"],
   }),
-
-  mounted() {
-    this.authProvider = new firebase.auth.GoogleAuthProvider();
-    this.authProvider.setCustomParameters({
-      hd: "cam.ac.uk",
-    });
-  },
 
   methods: {
     login() {
@@ -115,9 +105,7 @@ export default {
       this.message = null;
 
       this.$store
-        .dispatch("loginUserViaRavenAction", {
-          authProvider: this.authProvider,
-        })
+        .dispatch("loginUserViaRavenAction")
         .then((response) => {
           this.message = response;
           this.$router.replace("chat");

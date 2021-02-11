@@ -93,11 +93,15 @@ const actions = {
         })
     },
 
-    loginUserViaRavenAction({ commit }, payload) {
+    loginUserViaRavenAction({ commit }) {
+        var authProvider = new firebase.auth.GoogleAuthProvider();
+        authProvider.setCustomParameters({
+            hd: "cam.ac.uk",
+        });
         return new Promise((resolve, reject) => {
             firebase
                 .auth()
-                .signInWithPopup(payload.authProvider)
+                .signInWithPopup(authProvider)
                 .then((user) => {
                     let message = {
                         type: "success",
