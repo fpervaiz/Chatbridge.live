@@ -57,12 +57,20 @@ exports.registerUser = functions.https.onCall((data, context) => {
 });
 
 exports.userDocOnCreate = functions.auth.user().onCreate((userRecord, context) => {
-  return admin.firestore().collection("users").doc(userRecord.uid)
-      .set({
-        email: userRecord.email,
-        displayName: userRecord.displayName,
-      })
-      .catch(console.error);
+  // In future this can be expanded to allow any university domain names
+  if (userRecord.email.toLowerCase().endsWith("@cam.ac.uk")) {
+    return admin.firestore().collection("users").doc(userRecord.uid)
+        .set({
+          email: userRecord.email,
+          displayName: userRecord.displayName,
+        })
+        .catch(console.error);
+  } else {
+    return admin.auth().deleteUser(userRecord.uid).then(() => {
+      console.log("Successfully deleted invalid user", userRecord.email, userRecord.uid);
+    })
+        .catch(console.error);
+  }
 });
 
 exports.userDocOnDelete = functions.auth.user().onDelete((userRecord, context) => {
