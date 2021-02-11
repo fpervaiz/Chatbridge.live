@@ -93,6 +93,44 @@ const actions = {
         })
     },
 
+    loginUserViaRavenAction({ commit }, payload) {
+        return new Promise((resolve, reject) => {
+            firebase
+                .auth()
+                .signInWithPopup(payload.authProvider)
+                .then((user) => {
+                    let message = {
+                        type: "success",
+                        text: "Successfully logged in.",
+                    }
+                    commit("setMessage", message)
+                    commit("setUser", user);
+                    resolve(message)
+                })
+                .catch((error) => {
+                    let message = {
+                        type: "error",
+                        text: "",
+                    }
+                    switch (error.code) {
+                        case "auth/user-disabled": {
+                            message.text = "Your account has temporarily been suspended. Please try again later."
+                            break;
+                        }
+                        case "auth/wrong-password": {
+                            message.text = "Incorrect username or password."
+                            break;
+                        }
+                        default: {
+                            message.text = "Error logging in. Please try again later."
+                        }
+                    }
+                    commit("setMessage", message)
+                    reject(message)
+                });
+        })
+    },
+
     resetUserPasswordAction({ commit }, payload) {
         return new Promise((resolve) => {
             firebase.auth().sendPasswordResetEmail(payload.email).then(() => {

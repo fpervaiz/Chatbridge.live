@@ -1,6 +1,14 @@
 <template>
   <v-container fluid class="fluid">
     <v-row justify="center" align="center" class="my-5">
+      <v-col justify="center" align="center">
+        <v-btn color="primary" @click="loginRaven"
+          ><v-icon dark left> mdi-login </v-icon>Log in with Raven</v-btn
+        >
+      </v-col>
+    </v-row>
+    <v-divider></v-divider>
+    <v-row justify="center" align="center" class="my-5">
       <h2>First time here?</h2>
       <v-btn class="mx-5" color="secondary" to="/register">Sign up</v-btn>
     </v-row>
@@ -51,6 +59,9 @@
 </template>
 
 <script>
+import firebase from "firebase/app";
+import "firebase/auth";
+
 export default {
   name: "Login",
 
@@ -73,6 +84,13 @@ export default {
     passwordRules: [(v) => !!v || "Password is required"],
   }),
 
+  mounted() {
+    this.authProvider = new firebase.auth.GoogleAuthProvider();
+    this.authProvider.setCustomParameters({
+      hd: "cam.ac.uk",
+    });
+  },
+
   methods: {
     login() {
       this.message = null;
@@ -91,6 +109,22 @@ export default {
             this.message = error;
           });
       }
+    },
+
+    loginRaven() {
+      this.message = null;
+
+      this.$store
+        .dispatch("loginUserViaRavenAction", {
+          authProvider: this.authProvider,
+        })
+        .then((response) => {
+          this.message = response;
+          this.$router.replace("chat");
+        })
+        .catch((error) => {
+          this.message = error;
+        });
     },
   },
 };
