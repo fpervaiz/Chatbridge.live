@@ -533,6 +533,19 @@ export default {
           self.localPeer = new Peer({
             initiator: data.isInitiator,
             stream: this.userCamStream,
+            config: {
+              iceServers: [
+                {
+                  urls: JSON.parse(process.env.VUE_APP_STUN_SERVERS),
+                },
+                {
+                  urls: process.env.VUE_APP_TURN_SERVER,
+                  username: data.turnCreds.username,
+                  credential: data.turnCreds.password,
+                },
+              ],
+              sdpSemantics: "unified-plan",
+            },
           });
 
           setTimeout(() => {
