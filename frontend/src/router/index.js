@@ -1,11 +1,11 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 
-import HomePage from './../components/HomePage.vue'
-import Login from './../components/Login.vue'
-import Register from './../components/Register.vue'
-import ResetPassword from './../components/ResetPassword.vue'
-import Chat from './../components/Chat.vue'
+const HomePage = () => import('./../components/HomePage.vue')
+const Login = () => import('./../components/Login.vue')
+const Register = () => import('./../components/Register.vue')
+const ResetPassword = () => import('./../components/ResetPassword.vue')
+const Chat = () => import('./../components/Chat.vue')
 
 import store from './../store';
 
