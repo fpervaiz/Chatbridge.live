@@ -9,7 +9,11 @@
       contain
     ></v-img>
 
-    <v-app-bar-title class="ml-2 logo"> chatbridge </v-app-bar-title>
+    <router-link to="/"
+      ><v-app-bar-title class="ml-2 logo plain-link">
+        chatbridge
+      </v-app-bar-title></router-link
+    >
     <v-layout align-center justify-end>
       <v-btn v-if="userLoggedIn" @click="logout" icon>
         <v-icon>mdi-logout</v-icon>
