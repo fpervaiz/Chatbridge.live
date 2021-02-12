@@ -1,5 +1,5 @@
 <template>
-  <v-app-bar height="72" flat app>
+  <v-app-bar height="84" flat app>
     <v-spacer></v-spacer>
     <v-img
       class="mx-1 mb-3"
