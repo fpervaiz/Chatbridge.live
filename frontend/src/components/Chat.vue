@@ -549,7 +549,7 @@ export default {
           });
 
           setTimeout(() => {
-            if (this.appStates !== appStates.CONNECTED) {
+            if (this.appState !== appStates.CONNECTED) {
               this.handlePeerError();
             }
           }, 20000);
