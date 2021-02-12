@@ -2,6 +2,7 @@ require('dotenv').config()
 
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:8080'
 const PORT = process.env.PORT || 3000
+const TURN_SECRET = process.env.TURN_SECRET
 
 const app = require('express')()
 const http = require('http').Server(app)
@@ -16,12 +17,28 @@ const admin = require('firebase-admin')
 const { v4: uuidv4 } = require('uuid')
 const generateName = require('sillyname')
 const Denque = require("denque")
+const crypto = require('crypto');
 
 var serviceAccount = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from(process.env.FIREBASE_CONFIG_B64, 'base64').toString('ascii')) : require("./firebaseSA.credential.json")
 
 var firebase = admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
 });
+
+function generateTURNCredentials(secret) {
+    const unixTimeStamp = parseInt(Date.now() / 1000) + 3 * 3600
+    const randInt = Math.floor(Math.random() * 100001)
+    const username = [unixTimeStamp, randInt, 'service.chatbridge.live'].join(':')
+    var hmac = crypto.createHmac('sha1', secret);
+    hmac.setEncoding('base64');
+    hmac.write(username);
+    hmac.end();
+    const password = hmac.read();
+    return {
+        username: username,
+        password: password
+    };
+}
 
 var userQueue = new Denque()
 var userQueueCache = new Set()
@@ -121,8 +138,8 @@ io.on('connection', function (socket) {
                     socket.friendlyName = initiatorFriendlyName
                     frontOfQueue.friendlyName = receiverFriendlyName
 
-                    socket.emit('connect_peer', { peerId: frontOfQueue.id, localFriendlyName: initiatorFriendlyName, peerFriendlyName: receiverFriendlyName, isInitiator: true })
-                    frontOfQueue.emit('connect_peer', { peerId: socket.id, localFriendlyName: receiverFriendlyName, peerFriendlyName: initiatorFriendlyName, isInitiator: false })
+                    socket.emit('connect_peer', { peerId: frontOfQueue.id, localFriendlyName: initiatorFriendlyName, peerFriendlyName: receiverFriendlyName, isInitiator: true, turnCreds: generateTURNCredentials(TURN_SECRET) })
+                    frontOfQueue.emit('connect_peer', { peerId: socket.id, localFriendlyName: receiverFriendlyName, peerFriendlyName: initiatorFriendlyName, isInitiator: false, turnCreds: generateTURNCredentials(TURN_SECRET) })
                 }
                 else {
                     userQueue.push(socket)
