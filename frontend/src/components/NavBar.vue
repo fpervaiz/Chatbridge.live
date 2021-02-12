@@ -1,16 +1,20 @@
 <template>
-  <v-app-bar app>
-    <v-row justify="center">
-      <v-col cols="3"> </v-col>
-      <v-col cols="6" justify="center" align="center" class="mt-1">
-        <router-link class="plain-link" to="/"><h2>Chatbridge</h2></router-link>
-      </v-col>
-      <v-col cols="3" justify="right" align="right">
-        <v-btn v-if="userLoggedIn" @click="logout" icon>
-          <v-icon>mdi-logout</v-icon>
-        </v-btn>
-      </v-col>
-    </v-row>
+  <v-app-bar height="72" flat app>
+    <v-spacer></v-spacer>
+    <v-img
+      class="mx-1 mb-3"
+      src="@/assets/chat.svg"
+      max-height="36"
+      max-width="36"
+      contain
+    ></v-img>
+
+    <v-app-bar-title class="ml-2 logo"> chatbridge </v-app-bar-title>
+    <v-layout align-center justify-end>
+      <v-btn v-if="userLoggedIn" @click="logout" icon>
+        <v-icon>mdi-logout</v-icon>
+      </v-btn>
+    </v-layout>
   </v-app-bar>
 </template>
 
@@ -42,5 +46,9 @@ export default {
 .plain-link {
   text-decoration: none;
   color: white;
+}
+.logo {
+  font-family: "a Affirmation";
+  font-size: 56px;
 }
 </style>

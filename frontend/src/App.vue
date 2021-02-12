@@ -29,6 +29,12 @@ export default {
 </script>
 
 <style>
+@font-face {
+  font-family: "a Affirmation";
+  src: local("a Affirmation"),
+    url(assets/fonts/aAffirmation.otf) format("opentype");
+}
+
 .slide-enter-active,
 .slide-leave-active {
   transition: opacity 0.25s, transform 0.25s;
