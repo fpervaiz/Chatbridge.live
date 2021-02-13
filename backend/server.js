@@ -173,7 +173,6 @@ io.on('connection', function (socket) {
     })
 
     socket.on('block_report', (data, callback) => {
-        console.log(data)
         // Looking up the socket by socket ID doesn't work if the
         // socket we are looking for has since disconnected. For now,
         // use a persistent map of socket ID -> user uID.
