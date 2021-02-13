@@ -13,9 +13,7 @@ jobs:
     steps:
       - name: checkout-repo
         uses: actions/checkout@v2
-      - name: set-heroku-dev-remote
+      - name: deploy-backend-to-heroku-dev
         env: 
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: git remote add heroku https://:${{ secrets.HEROKU_API_KEY }}@git.heroku.com/service-chatbridge-dev.git
-      - name: deploy-backend-to-heroku-dev
-        run: git subtree push --prefix backend heroku master
+        run: git remote add heroku https://:${{ secrets.HEROKU_API_KEY }}@git.heroku.com/service-chatbridge-dev.git && git subtree push --prefix backend heroku master
