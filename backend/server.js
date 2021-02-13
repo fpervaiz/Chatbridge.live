@@ -5,6 +5,12 @@ const PORT = process.env.PORT || 3000
 const TURN_SECRET = process.env.TURN_SECRET
 const SERVICE_ACCOUNT = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from(process.env.FIREBASE_CONFIG_B64, 'base64').toString('ascii')) : require("./firebaseSA.credential.json")
 
+const admin = require('firebase-admin')
+const { v4: uuidv4 } = require('uuid')
+const generateName = require('sillyname')
+const Denque = require("denque")
+const crypto = require('crypto');
+
 const app = require('express')()
 const http = require('http').Server(app)
 const io = require('socket.io')(http, {
@@ -13,13 +19,6 @@ const io = require('socket.io')(http, {
         methods: ['GET', 'POST']
     }
 })
-
-const admin = require('firebase-admin')
-const { v4: uuidv4 } = require('uuid')
-const generateName = require('sillyname')
-const Denque = require("denque")
-const crypto = require('crypto');
-
 
 var firebase = admin.initializeApp({
     credential: admin.credential.cert(SERVICE_ACCOUNT)
