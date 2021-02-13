@@ -13,9 +13,9 @@ jobs:
     steps:
       - name: checkout-repo
         uses: actions/checkout@v2
-      - name: install-firebase-tools
-        run: npm install -g firebase-tools
       - name: install-dependencies
         run: cd firebase/functions && npm i
-      - name: deploy-functions-to-firebase-production
+      - name: install-firebase-tools
+        run: npm i firebase-tools
+      - name: deploy-functions-to-firebase-staging
         run: firebase use chatbridge-live && npm run deploy
