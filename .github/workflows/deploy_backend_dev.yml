@@ -16,6 +16,6 @@ jobs:
       - name: set-heroku-dev-remote
         env: 
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: heroku git:remote --app service-chatbridge-dev
+        run: git remote add heroku https://:{{ secrets.HEROKU_API_KEY }}@git.heroku.com/service-chatbridge-dev.git
       - name: deploy-backend-to-heroku-dev
         run: git subtree push --prefix backend heroku master
