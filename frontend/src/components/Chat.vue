@@ -1,32 +1,7 @@
 <template>
   <v-container fluid class="my-2">
-    <v-row class="mt-2 mb-5">
-      <v-col justify="center" align="center"
-        ><v-btn @click="search" :disabled="!enableSearch"
-          >Find New Caller
-          <v-icon dark right> mdi-account-search </v-icon></v-btn
-        ></v-col
-      >
-      <v-col justify="center" align="center">
-        <v-btn
-          color="error"
-          @click="
-            () => {
-              showBlockThisUser
-                ? (this.blockConfirmDialog = true)
-                : blockReportPeer();
-            }
-          "
-          :disabled="!enableBlock"
-        >
-          Block/Report <template v-if="showBlockThisUser">this</template
-          ><template v-else>last</template> User
-          <v-icon dark right> mdi-account-cancel </v-icon>
-        </v-btn>
-      </v-col>
-    </v-row>
-    <v-row class="my-5">
-      <v-col cols="6">
+    <v-row class="p-3">
+      <v-col class="col-xs">
         <h4>
           Who?<span v-if="showRemoteName"> ({{ showRemoteName }})</span>
         </h4>
@@ -35,10 +10,12 @@
           <p>{{ peerStatusMessage }}</p>
         </div>
         <video
-          width="512"
-          height="288"
+          v-if="peerCamStream"
+          :width="peerWidth"
+          height="auto"
           autoplay="true"
-          id="userCam"
+          id="peerCam"
+          v-on:click="togglePeerShrink()"
           :src-object.prop.camel="peerCamStream"
         ></video>
 
@@ -50,15 +27,44 @@
           <p>Connect a webcam or allow access.</p>
         </div>
         <video
-          width="512"
-          height="288"
+          v-if="userCamStream"
+          :width="userWidth"
+          height="auto"
           autoplay="true"
-          id="peerCam"
+          id="userCam"
+          v-on:click="toggleUserShrink()"
           muted="muted"
           :src-object.prop.camel="userCamStream"
         ></video>
       </v-col>
-      <v-col cols="6">
+
+      <v-col class="col-xs">
+        <div class="mb-3">
+          <v-btn class="mr-2 mb-2" @click="search" :disabled="!enableSearch"
+            ><v-icon dark left> mdi-account-search </v-icon>Find me someone
+          </v-btn>
+          <v-btn
+            class="mr-2 mb-2"
+            color="error"
+            @click="
+              () => {
+                userConnected
+                  ? (this.blockConfirmDialog = true)
+                  : blockReportPeer();
+              }
+            "
+            :disabled="!enableBlock"
+            ><v-icon dark left> mdi-cancel </v-icon> Block/Report
+            <template v-if="userConnected">this</template
+            ><template v-else>last</template> User
+          </v-btn>
+          <v-btn
+            class="mr-2 mb-2"
+            @click="closePeerConnection(true)"
+            :disabled="!userConnected"
+            ><v-icon dark left> mdi-phone-hangup </v-icon>Disconnect
+          </v-btn>
+        </div>
         <h3>Chat</h3>
         <div class="my-5" id="chatbox">
           <template v-for="(message, i) in chatMessages">
@@ -82,7 +88,6 @@
             </p>
           </template>
         </div>
-
         <v-text-field
           label="Type a message..."
           v-model="chatMessageInput"
@@ -224,6 +229,9 @@ export default {
       userCamStream: null,
       peerCamStream: null,
 
+      userCamShrink: false,
+      peerCamShrink: false,
+
       chatMessages: [],
       chatMessageInput: "",
       chatBox: null,
@@ -299,12 +307,8 @@ export default {
       }
     },
 
-    showBlockThisUser() {
+    userConnected() {
       return this.appState === appStates.CONNECTED;
-    },
-
-    showBlockLastUser() {
-      return this.appState === appStates.DISCONNECTED;
     },
 
     showPeerStream() {
@@ -340,7 +344,7 @@ export default {
     peerStatusMessage() {
       switch (this.appState) {
         case appStates.READY: {
-          return "Hit 'Find' to get going.";
+          return "Hit 'Find me someone' to get going.";
         }
         case appStates.SEARCHING: {
           return "Finding you someone...";
@@ -361,6 +365,14 @@ export default {
           return null;
         }
       }
+    },
+
+    peerWidth() {
+      return this.peerCamShrink ? "50%" : "100%";
+    },
+
+    userWidth() {
+      return this.userCamShrink ? "50%" : "100%";
     },
   },
 
@@ -464,7 +476,7 @@ export default {
 
     handlePeerError() {
       this.matchingSocket.emit("handle_peer_error");
-      if (!this.localPeer.destroyed) {
+      if (this.localPeer && !this.localPeer.destroyed) {
         this.localPeer.destroy();
       }
       this.peerCamStream = null;
@@ -483,6 +495,14 @@ export default {
       if (this.wsConnected) {
         this.matchingSocket.disconnect();
       }
+    },
+
+    togglePeerShrink() {
+      this.peerCamShrink = !this.peerCamShrink;
+    },
+
+    toggleUserShrink() {
+      this.userCamShrink = !this.userCamShrink;
     },
   },
 
@@ -548,8 +568,11 @@ export default {
             },
           });
 
-          setTimeout(() => {
-            if (this.appState !== appStates.CONNECTED) {
+          setTimeout((initialPeerId) => {
+            if (
+              this.appState === appStates.CONNECTING &&
+              this.peerId === initialPeerId
+            ) {
               this.handlePeerError();
             }
           }, 20000);
@@ -630,6 +653,7 @@ export default {
             this.wsConnectionError =
               "Looks like our matchmaking genie has gone missing. Please try again later.";
         }
+        this.matchingSocket.removeAllListeners();
       });
     });
   },
@@ -645,6 +669,7 @@ export default {
 
     if (this.wsConnected) {
       this.matchingSocket.disconnect();
+      this.matchingSocket.removeAllListeners();
       this.wsConnected = false;
       console.log("Disconnected matching");
     }
@@ -661,6 +686,6 @@ video {
 }
 #chatbox {
   overflow: auto;
-  height: 320px;
+  height: 30vh;
 }
 </style>
