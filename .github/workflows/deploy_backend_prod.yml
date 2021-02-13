@@ -11,11 +11,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout-repo
-        uses: actions/checkout@v2
-      - name: set-heroku-prod-remote
-        env: 
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: git remote add heroku https://:${{ secrets.HEROKU_API_KEY }}@git.heroku.com/service-chatbridge-prod.git
-      - name: deploy-backend-to-heroku-prod
-        run: git subtree push --prefix backend heroku master
+      - uses: actions/checkout@v2
+      - uses: akhileshns/heroku-deploy@v3.10.9
+        with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: "service-chatbridge-prod"
+          heroku_email: "mfaizk2008@gmail.com"
+          remote_branch: master
+          appdir: "backend"
