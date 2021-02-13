@@ -65,37 +65,40 @@
             ><v-icon dark left> mdi-phone-hangup </v-icon>Disconnect
           </v-btn>
         </div>
-        <h3>Chat</h3>
-        <div class="my-5" id="chatbox">
-          <template v-for="(message, i) in chatMessages">
-            <p
-              v-if="message.sender === '_STATUS_GREEN'"
-              :key="i"
-              style="color: green"
-            >
-              <strong>{{ message.text }}</strong>
-            </p>
-            <p
-              v-else-if="message.sender === '_STATUS_RED'"
-              :key="i"
-              style="color: red"
-            >
-              <strong>{{ message.text }}</strong>
-            </p>
-            <p v-else :key="i">
-              <strong>{{ message.sender }}: </strong>
-              <span v-html="autolinker.link(message.text)"></span>
-            </p>
-          </template>
+        <div id="chatarea" class="px-3 py-3">
+          <h3>Chat</h3>
+          <div class="my-5" id="chatbox">
+            <template v-for="(message, i) in chatMessages">
+              <p
+                v-if="message.sender === '_STATUS_GREEN'"
+                :key="i"
+                style="color: green"
+              >
+                <strong>{{ message.text }}</strong>
+              </p>
+              <p
+                v-else-if="message.sender === '_STATUS_RED'"
+                :key="i"
+                style="color: red"
+              >
+                <strong>{{ message.text }}</strong>
+              </p>
+              <p v-else :key="i">
+                <strong>{{ message.sender }}: </strong>
+                <span v-html="message.html"></span>
+              </p>
+            </template>
+          </div>
+          <v-text-field
+            label="Type a message..."
+            v-model="chatMessageInput"
+            :append-outer-icon="'mdi-send'"
+            @click:append-outer="sendChatMessage"
+            v-on:keyup.enter="sendChatMessage"
+            :disabled="!userConnected"
+            solo
+          ></v-text-field>
         </div>
-        <v-text-field
-          label="Type a message..."
-          v-model="chatMessageInput"
-          :append-outer-icon="'mdi-send'"
-          @click:append-outer="sendChatMessage"
-          v-on:keyup.enter="sendChatMessage"
-          solo
-        ></v-text-field>
       </v-col>
     </v-row>
     <v-overlay v-if="showWsOverlay">
@@ -378,7 +381,7 @@ export default {
 
   methods: {
     search() {
-      if (this.appStates === appStates.CONNECTED) {
+      if (this.appState === appStates.CONNECTED) {
         this.closePeerConnection(true);
       }
 
@@ -402,16 +405,14 @@ export default {
             },
           };
           this.localPeer.send(JSON.stringify(chatMessage));
-          this.chatMessages.push(chatMessage.chatMessage);
+          this.addChatMessage(chatMessage.chatMessage);
           this.chatMessageInput = "";
         } else {
-          this.chatMessages.push({
+          this.addChatMessage({
             sender: "_STATUS_RED",
             text: "You aren't connected to anyone",
           });
         }
-        this.chatBox.scrollTop =
-          this.chatBox.scrollHeight - this.chatBox.clientHeight;
       }
     },
 
@@ -450,6 +451,16 @@ export default {
       }
     },
 
+    addChatMessage(chatMessage) {
+      chatMessage.html = this.autolinker.link(chatMessage.text);
+      this.chatMessages.push(chatMessage);
+      // This is really bad. Need to diagnose slow v-for performance.
+      setTimeout(
+        () => (this.chatBox.scrollTop = this.chatBox.scrollHeight),
+        100
+      );
+    },
+
     closePeerConnection(isInitiator) {
       if (isInitiator) {
         this.matchingSocket.emit("disconnect_peer");
@@ -457,7 +468,7 @@ export default {
 
       this.localPeer.destroy();
 
-      this.chatMessages.push({
+      this.addChatMessage({
         sender: "_STATUS_RED",
         text: "Disconnected from " + this.remotePeerFriendlyName,
       });
@@ -586,7 +597,7 @@ export default {
           self.localPeer.on("connect", () => {
             this.appState = appStates.CONNECTED;
             console.log("connected to remotePeer!");
-            this.chatMessages.push({
+            this.addChatMessage({
               sender: "_STATUS_GREEN",
               text: "Connected to " + this.remotePeerFriendlyName,
             });
@@ -599,9 +610,7 @@ export default {
           self.localPeer.on("data", (data) => {
             const msg = JSON.parse(data);
             if (msg.type === "chatMessage") {
-              self.chatMessages.push(msg.chatMessage);
-              this.chatBox.scrollTop =
-                this.chatBox.scrollHeight - this.chatBox.clientHeight;
+              self.addChatMessage(msg.chatMessage);
             }
           });
 
@@ -685,7 +694,7 @@ video {
   transform: scaleX(-1);
 }
 #chatbox {
-  overflow: auto;
-  height: 30vh;
+  overflow-y: auto;
+  max-height: 30vh;
 }
 </style>
