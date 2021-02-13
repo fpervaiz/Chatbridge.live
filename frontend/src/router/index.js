@@ -3,8 +3,8 @@ import Router from 'vue-router'
 
 const HomePage = () => import('./../components/HomePage.vue')
 const Login = () => import('./../components/Login.vue')
-const Register = () => import('./../components/Register.vue')
-const ResetPassword = () => import('./../components/ResetPassword.vue')
+// const Register = () => import('./../components/Register.vue')
+// const ResetPassword = () => import('./../components/ResetPassword.vue')
 const Chat = () => import('./../components/Chat.vue')
 
 import store from './../store';
@@ -14,9 +14,10 @@ Vue.use(Router)
 const routes = [
     { path: '/', component: HomePage },
     { path: '/login', component: Login },
-    { path: '/register', component: Register },
-    { path: '/resetPassword', component: ResetPassword },
-    { path: '/chat', component: Chat, meta: { requiresAuth: true } }
+    // { path: '/register', component: Register },
+    // { path: '/resetPassword', component: ResetPassword },
+    { path: '/chat', component: Chat, meta: { requiresAuth: true } },
+    { path: '*', component: HomePage },
 ]
 
 const router = new Router({
