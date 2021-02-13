@@ -3,6 +3,7 @@ require('dotenv').config()
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:8080'
 const PORT = process.env.PORT || 3000
 const TURN_SECRET = process.env.TURN_SECRET
+const SERVICE_ACCOUNT = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from(process.env.FIREBASE_CONFIG_B64, 'base64').toString('ascii')) : require("./firebaseSA.credential.json")
 
 const app = require('express')()
 const http = require('http').Server(app)
@@ -19,10 +20,9 @@ const generateName = require('sillyname')
 const Denque = require("denque")
 const crypto = require('crypto');
 
-var serviceAccount = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from(process.env.FIREBASE_CONFIG_B64, 'base64').toString('ascii')) : require("./firebaseSA.credential.json")
 
 var firebase = admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(SERVICE_ACCOUNT)
 });
 
 function generateTURNCredentials(secret) {
