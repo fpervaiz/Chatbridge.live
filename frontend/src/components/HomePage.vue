@@ -12,7 +12,7 @@
           Only verified University of Cambridge students can use Chatbridge.
         </p>
         <v-btn to="/chat" class="mx-2" color="primary">Start chatting</v-btn>
-        <v-btn to="/register" class="mx-2" color="secondary">Sign up</v-btn>
+        <v-btn to="/about" class="mx-2" color="secondary">Tell me more</v-btn>
       </v-col>
     </v-row>
   </v-container>

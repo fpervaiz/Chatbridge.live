@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 
 const HomePage = () => import('./../components/HomePage.vue')
+const About = () => import('./../components/About.vue')
 const Login = () => import('./../components/Login.vue')
 // const Register = () => import('./../components/Register.vue')
 // const ResetPassword = () => import('./../components/ResetPassword.vue')
@@ -13,6 +14,7 @@ Vue.use(Router)
 
 const routes = [
     { path: '/', component: HomePage },
+    { path: '/about', component: About },
     { path: '/login', component: Login },
     // { path: '/register', component: Register },
     // { path: '/resetPassword', component: ResetPassword },
