@@ -12,7 +12,7 @@ admin.initializeApp();
 //   response.send("Hello from Firebase!");
 // });
 
-exports.registerUser = functions.https.onCall((data, context) => {
+exports.registerUser = functions.region("europe-west2").https.onCall((data, context) => {
   const email = data.email;
   const password = data.password;
   const recaptchaToken = data.recaptchaToken;
@@ -56,7 +56,7 @@ exports.registerUser = functions.https.onCall((data, context) => {
       });
 });
 
-exports.userDocOnCreate = functions.auth.user().onCreate((userRecord, context) => {
+exports.userDocOnCreate = functions.region("europe-west2").auth.user().onCreate((userRecord, context) => {
   // In future this can be expanded to allow any university domain names
   if (userRecord.email.toLowerCase().endsWith("@cam.ac.uk")) {
     return admin.firestore().collection("users").doc(userRecord.uid)
@@ -73,13 +73,13 @@ exports.userDocOnCreate = functions.auth.user().onCreate((userRecord, context) =
   }
 });
 
-exports.userDocOnDelete = functions.auth.user().onDelete((userRecord, context) => {
+exports.userDocOnDelete = functions.region("europe-west2").auth.user().onDelete((userRecord, context) => {
   return admin.firestore().collection("users").doc(userRecord.uid)
       .delete()
       .catch(console.error);
 });
 
-exports.reportDocOnCreate = functions.firestore.document("reports/{reportId}").onCreate((snap, context) => {
+exports.reportDocOnCreate = functions.region("europe-west2").firestore.document("reports/{reportId}").onCreate((snap, context) => {
   const reportedUid = snap.data().reported;
   return admin.auth().updateUser(reportedUid, {disabled: true}).then(() => {
     console.log("Successfully disabled user", reportedUid, "from report", snap.id);
