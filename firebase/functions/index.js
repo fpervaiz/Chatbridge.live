@@ -4,14 +4,6 @@ const axios = require("axios");
 
 admin.initializeApp();
 
-// // Create and Deploy Your First Cloud Functions
-// // https://firebase.google.com/docs/functions/write-firebase-functions
-//
-// exports.helloWorld = functions.https.onRequest((request, response) => {
-//   functions.logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
-
 exports.registerUser = functions.region("europe-west2").https.onCall((data, context) => {
   const email = data.email;
   const password = data.password;
