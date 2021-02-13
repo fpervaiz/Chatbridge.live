@@ -8,11 +8,10 @@
       max-width="36"
       contain
     ></v-img>
-
-    <router-link to="/"
-      ><v-app-bar-title class="ml-2 logo plain-link">
+    <v-app-bar-title class="ml-2">
+      <router-link class="logo" to="/">
         chatbridge
-      </v-app-bar-title></router-link
+      </router-link></v-app-bar-title
     >
     <v-layout align-center justify-end>
       <v-btn v-if="userLoggedIn" @click="logout" icon>
@@ -47,12 +46,10 @@ export default {
 </script>
 
 <style scoped>
-.plain-link {
-  text-decoration: none;
-  color: white;
-}
 .logo {
   font-family: "a Affirmation";
   font-size: 56px;
+  text-decoration: none;
+  color: white;
 }
 </style>
