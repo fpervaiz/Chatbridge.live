@@ -1,0 +1,19 @@
+name: Deploy backend to Heroku (Staging)
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout-repo
+        uses: actions/checkout@v2
+      - name: set-heroku-dev-remote
+        run: git remote add heroku https://heroku:${{ secrets.HEROKU_API_TOKEN }}@git.heroku.com/service-chatbridge-dev.git
+      - name: deploy-backend-to-heroku-dev
+        run: git subtree push --prefix backend heroku master
