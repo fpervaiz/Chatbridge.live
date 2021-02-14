@@ -52,8 +52,8 @@ io.use(function (socket, next) {
                 console.log(`VERIFY_TOKEN_ERROR: ${error}`)
                 next(new Error('unauthorised'))
             }).then((decodedToken) => {
-                socket.uId = decodedToken.uid
-                if (connectedUsers.has(socket.uId)) {
+                socket.uid = decodedToken.uid
+                if (connectedUsers.has(socket.uid)) {
                     next(new Error('already_connected'))
                 }
                 else if (!decodedToken.email.toLowerCase().endsWith('@cam.ac.uk')) {
@@ -61,9 +61,9 @@ io.use(function (socket, next) {
                 }
                 else {
 
-                    firebase.firestore().collection('users').doc(socket.uId).get()
+                    firebase.firestore().collection('users').doc(socket.uid).get()
                         .catch((error) => {
-                            console.log(`FIRESTORE_GET_USER_ERROR: ${socket.uId}: ${error}`)
+                            console.log(`FIRESTORE_GET_USER_ERROR: ${socket.uid}: ${error}`)
                         })
                         .then((doc) => {
                             const data = doc.data()
@@ -78,7 +78,7 @@ io.use(function (socket, next) {
                                 socket.userBlocks = data.blocked
                             }
                             socket.recents = {}
-                            connectedUsers.add(socket.uId)
+                            connectedUsers.add(socket.uid)
                             next()
                         })
                 }
@@ -98,9 +98,9 @@ io.on('connection', function (socket) {
             var match = null
             for (let candidateId of sockets) {
                 var candidate = io.sockets.sockets.get(candidateId)
-                const notSelf = socket.uId !== candidate.uId
-                const notRecent = !(candidate.uId in socket.recents && (Date.now() - socket.recents[candidate.uId]) <= 1800000)
-                const notBlocked = !(socket.userBlocks && candidate.uId in socket.userBlocks) && !(candidate.userBlocks && socket.uId in candidate.userBlocks)
+                const notSelf = socket.uid !== candidate.uid
+                const notRecent = !(candidate.uid in socket.recents && (Date.now() - socket.recents[candidate.uid]) <= 1800000)
+                const notBlocked = !(socket.userBlocks && candidate.uid in socket.userBlocks) && !(candidate.userBlocks && socket.uid in candidate.userBlocks)
 
                 if (notSelf && notRecent && notBlocked) {
                     match = candidate
@@ -111,8 +111,8 @@ io.on('connection', function (socket) {
             if (match) {
                 console.log(`MATCH (${socket.university}): ${socket.id} <-> ${match.id}`)
 
-                socket.recents[match.uId] = Date.now()
-                match.recents[socket.uId] = Date.now()
+                socket.recents[match.uid] = Date.now()
+                match.recents[socket.uid] = Date.now()
 
                 const newRoomId = uuidv4()
                 const initiatorFriendlyName = generateName()
@@ -124,8 +124,8 @@ io.on('connection', function (socket) {
                 socket.join(newRoomId)
                 match.join(newRoomId)
 
-                socket.peerUid = match.uId
-                match.peerUid = socket.uId
+                socket.peerUid = match.uid
+                match.peerUid = socket.uid
 
                 socket.friendlyName = initiatorFriendlyName
                 match.friendlyName = receiverFriendlyName
@@ -162,7 +162,7 @@ io.on('connection', function (socket) {
     })
 
     socket.on('block_report', (data, callback) => {
-        const fromUid = socket.uId
+        const fromUid = socket.uid
         const toUid = socket.peerUid
 
         const dateInt = Date.now()
@@ -235,7 +235,7 @@ io.on('connection', function (socket) {
                 })
             })
         }
-        connectedUsers.delete(socket.uId)
+        connectedUsers.delete(socket.uid)
     })
 })
 
