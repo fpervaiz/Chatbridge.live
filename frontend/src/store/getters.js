@@ -7,6 +7,16 @@ const getters = {
             return state.user.displayName
         }
     },
+    getUserEmail(state) {
+        if (state.user) {
+            return state.user.email
+        }
+    },
+    getUserUniversity(state) {
+        if (state.user) {
+            return state.user.university
+        }
+    },
     isUserAuth(state) {
         return !!state.user;
     },

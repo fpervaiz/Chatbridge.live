@@ -103,6 +103,7 @@ const actions = {
                 .auth()
                 .signInWithPopup(authProvider)
                 .then((user) => {
+                    user.university = "University of Cambridge"
                     let message = {
                         type: "success",
                         text: "Successfully logged in.",

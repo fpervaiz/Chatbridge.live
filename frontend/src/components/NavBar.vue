@@ -14,9 +14,37 @@
       </router-link></v-app-bar-title
     >
     <v-layout align-center justify-end>
-      <v-btn v-if="userLoggedIn" @click="logout" icon>
-        <v-icon>mdi-logout</v-icon>
-      </v-btn>
+      <v-menu v-if="userLoggedIn" v-model="menu" offset-y>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn v-bind="attrs" v-on="on" icon>
+            <v-icon>mdi-account</v-icon>
+          </v-btn>
+        </template>
+
+        <v-card>
+          <v-list>
+            <v-list-item>
+              <v-list-item-avatar>
+                <v-icon>mdi-account</v-icon>
+              </v-list-item-avatar>
+
+              <v-list-item-content>
+                <v-list-item-title>{{ userEmail }}</v-list-item-title>
+                <v-list-item-subtitle
+                  >University of Cambridge</v-list-item-subtitle
+                >
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+
+          <v-divider></v-divider>
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" text @click="logout()"> Logout </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-menu>
     </v-layout>
   </v-app-bar>
 </template>
@@ -32,6 +60,14 @@ export default {
 
     userDisplayName() {
       return this.$store.getters.getUserDisplayName;
+    },
+
+    userEmail() {
+      return this.$store.getters.getUserEmail;
+    },
+
+    userUniversity() {
+      return this.$store.getters.university;
     },
   },
 
