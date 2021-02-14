@@ -3,7 +3,8 @@ import Router from 'vue-router'
 
 const HomePage = () => import('./../components/HomePage.vue')
 const About = () => import('./../components/About.vue')
-const Login = () => import('./../components/Login.vue')
+const LoginRaven = () => import('./../components/LoginRaven.vue')
+// const Login = () => import('./../components/Login.vue')
 // const Register = () => import('./../components/Register.vue')
 // const ResetPassword = () => import('./../components/ResetPassword.vue')
 const Chat = () => import('./../components/Chat.vue')
@@ -15,7 +16,8 @@ Vue.use(Router)
 const routes = [
     { path: '/', component: HomePage },
     { path: '/about', component: About },
-    { path: '/login', component: Login },
+    { path: '/raven', component: LoginRaven },
+    // { path: '/login', component: Login },
     // { path: '/register', component: Register },
     // { path: '/resetPassword', component: ResetPassword },
     { path: '/chat', component: Chat, meta: { requiresAuth: true } },
@@ -31,7 +33,7 @@ const router = new Router({
 router.beforeEach((to, from, next) => {
     const requiresAuth = to.matched.some(x => x.meta.requiresAuth)
     if (requiresAuth && !store.getters.isUserAuth) {
-        next('/login')
+        next('/raven')
     } else {
         next()
     }

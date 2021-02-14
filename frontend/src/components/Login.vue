@@ -1,24 +1,15 @@
 <template>
   <v-container>
     <v-row justify="center" align="center" class="my-5">
-      <v-col justify="center" align="center">
-        <v-alert v-if="message" class="my-5" dense :type="message.type">
-          {{ message.text }}
-        </v-alert>
-        <v-btn color="primary" @click="loginRaven"
-          ><v-icon dark left> mdi-login </v-icon>Log in with Raven</v-btn
-        >
-      </v-col>
-    </v-row>
-    <!-- <v-divider></v-divider>
-    <v-row justify="center" align="center" class="my-5">
       <h2>First time here?</h2>
       <v-btn class="mx-5" color="secondary" to="/register">Sign up</v-btn>
     </v-row>
     <v-row justify="center" align="center" class="my-5">
       <v-col cols="10" md="6" class="text-center">
         <h1>Log In</h1>
-
+        <v-alert v-if="message" class="my-5" dense :type="message.type">
+          {{ message.text }}
+        </v-alert>
         <v-form ref="form" class="mx-2" lazy-validation>
           <v-row>
             <v-col cols="12">
@@ -55,15 +46,13 @@
           >
         </v-form>
       </v-col>
-    </v-row> -->
+    </v-row>
   </v-container>
 </template>
 
 <script>
 export default {
   name: "Login",
-
-  computed: {},
 
   data: () => ({
     email: "",
@@ -100,20 +89,6 @@ export default {
             this.message = error;
           });
       }
-    },
-
-    loginRaven() {
-      this.message = null;
-
-      this.$store
-        .dispatch("loginUserViaRavenAction")
-        .then((response) => {
-          this.message = response;
-          this.$router.replace("chat");
-        })
-        .catch((error) => {
-          this.message = error;
-        });
     },
   },
 };
