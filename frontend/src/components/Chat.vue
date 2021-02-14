@@ -385,7 +385,7 @@ export default {
         this.closePeerConnection(true);
       }
 
-      if (this.userCamStream) {
+      if (this.userCamStream && this.appState !== appStates.WS_ERROR) {
         this.remotePeerFriendlyName = null;
         this.peerId = null;
 
