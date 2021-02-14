@@ -41,7 +41,6 @@ function generateTURNCredentials(secret) {
 
 var userQueue = new Denque()
 var userQueueCache = new Set()
-var userBlocks = {}
 
 var roomsHistory = {}
 
@@ -73,12 +72,12 @@ io.use(function (socket, next) {
                     idMap[socket.id] = socket.uId
                     firebase.firestore().collection('users').doc(socket.uId).get()
                         .catch((error) => {
-                            console.log('error retreiving', socket.uId, 'blocks from firebase', error)
+                            console.log('error retrieving', socket.uId, 'blocks from firebase', error)
                         })
                         .then((doc) => {
                             const data = doc.data()
                             if (data.blocked) {
-                                userBlocks[socket.uId] = data.blocked
+                                socket.userBlocks = data.blocked
                             }
                             next()
                         })
@@ -106,7 +105,7 @@ io.on('connection', function (socket) {
 
             if (frontOfQueue) {
                 const notRecent = !roomsHistory[socket.uId] || !roomsHistory[socket.uId][frontOfQueue.uId] || Date.now() - roomsHistory[socket.uId][frontOfQueue.uId] >= 1800000
-                const notBlocked = !(socket.uId in userBlocks && frontOfQueue.uId in userBlocks[socket.uId]) && !(frontOfQueue.uId in userBlocks && socket.uId in userBlocks[frontOfQueue.uId])
+                const notBlocked = !(socket.userBlocks && frontOfQueue.uId in socket.userBlocks) && !(frontOfQueue.userBlocks && socket.uId in frontOfQueue.userBlocks)
 
                 if (notRecent && notBlocked) {
                     console.log('Found match for ', socket.id, ' (', frontOfQueue.id, ')')
@@ -187,11 +186,11 @@ io.on('connection', function (socket) {
         const dateObj = admin.firestore.Timestamp.fromDate(new Date())
 
         if (data.formData.toBlock) {
-            if (!(fromUid in userBlocks)) {
-                userBlocks[fromUid] = {}
+            if (!(socket.userBlocks)) {
+                socket.userBlocks = {}
             }
 
-            userBlocks[fromUid][toUid] = Date()
+            socket.userBlocks[toUid] = Date()
 
             firebase.firestore().collection('users').doc(fromUid)
                 .set({ blocked: { [toUid]: dateObj } }, { merge: true })
@@ -250,7 +249,6 @@ io.on('connection', function (socket) {
                 socket.roomId = null
             })
         }
-        delete userBlocks[socket.uId]
         userQueueCache.delete(socket.uId)
         connectedUsers.delete(socket.uId)
     })
