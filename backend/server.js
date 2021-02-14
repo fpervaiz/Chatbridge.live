@@ -49,7 +49,7 @@ io.use(function (socket, next) {
     if (idToken) {
         firebase.auth().verifyIdToken(idToken, true)
             .catch((error) => {
-                console.log('Firebase error', error)
+                console.log(`VERIFY_TOKEN_ERROR: ${error}`)
                 next(new Error('unauthorised'))
             }).then((decodedToken) => {
                 socket.uId = decodedToken.uid
@@ -63,7 +63,7 @@ io.use(function (socket, next) {
 
                     firebase.firestore().collection('users').doc(socket.uId).get()
                         .catch((error) => {
-                            console.log('error retrieving', socket.uId, 'blocks from firebase', error)
+                            console.log(`FIRESTORE_GET_USER_ERROR: ${socket.uId}: ${error}`)
                         })
                         .then((doc) => {
                             const data = doc.data()
@@ -178,10 +178,10 @@ io.on('connection', function (socket) {
             firebase.firestore().collection('users').doc(fromUid)
                 .set({ blocked: { [toUid]: dateObj } }, { merge: true })
                 .then(() => {
-                    console.log('Set block for', toUid, 'from', fromUid)
+                    console.log(`BLOCKED (${socket.university}): ${fromUid} -> ${toUid}`)
                 })
                 .catch((error) => {
-                    console.log('Error setting firestore block', error)
+                    console.log(`BLOCK_ERROR (${socket.university}): ${fromUid} -> ${toUid}: ${error}`)
                     callback({
                         status: 'error'
                     })
@@ -207,11 +207,11 @@ io.on('connection', function (socket) {
                 }
                 firebase.firestore().collection('users').doc(toUid)
                     .set({ reports: reportRef }, { merge: true }).then(() => {
-                        console.log('Set report for', toUid, 'from', fromUid)
+                        console.log(`REPORTED (${socket.university}): ${fromUid} -> ${toUid}`)
                     })
             })
                 .catch((error) => {
-                    console.log('Error setting firestore report', error)
+                    console.log(`REPORT_ERROR (${socket.university}): ${fromUid} -> ${toUid}: ${error}`)
                     callback({
                         status: 'error'
                     })
@@ -240,6 +240,9 @@ io.on('connection', function (socket) {
 })
 
 http.listen(PORT, () => {
-    console.log('CORS origin:', CORS_ORIGIN)
-    console.log('listening on *:', PORT)
+    console.log('---------------------------------------------------------')
+    console.log('service.chatbridge.live')
+    console.log(`CORS origin: ${CORS_ORIGIN}`)
+    console.log(`Listening on *:${PORT}`)
+    console.log('')
 })
