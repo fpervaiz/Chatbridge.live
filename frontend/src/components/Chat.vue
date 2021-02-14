@@ -186,12 +186,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-snackbar v-model="blockSuccessBar" :timeout="4000" color="success"
-      >Submitted successfully.</v-snackbar
-    >
-    <v-snackbar v-model="blockErrorBar" :timeout="4000" color="error"
-      >Error submitting. Please try again.</v-snackbar
-    >
   </v-container>
 </template>
 
@@ -241,8 +235,6 @@ export default {
 
       blockConfirmDialog: false,
       blockReportDialog: false,
-      blockSuccessBar: false,
-      blockErrorBar: false,
 
       blockReportFormData: {
         toBlock: false,
@@ -434,15 +426,22 @@ export default {
           "block_report",
           { peerId: this.toBlockPeerId, formData: this.blockReportFormData },
           (response) => {
+            this.blockReportDialog = false;
             switch (response.status) {
               case "ok": {
-                this.blockReportDialog = false;
                 this.$refs.blockReportForm.reset();
-                this.blockSuccessBar = true;
+                this.addChatMessage({
+                  sender: "_STATUS_GREEN",
+                  text:
+                    "Successfully blocked/reported " + this.toBlockFriendlyName,
+                });
                 break;
               }
               case "error": {
-                this.blockErrorBar = true;
+                this.addChatMessage({
+                  sender: "_STATUS_RED",
+                  text: "Failed to block/report. Please try again.",
+                });
                 break;
               }
             }
