@@ -46,8 +46,6 @@ var roomsHistory = {}
 
 var connectedUsers = new Set()
 
-var idMap = {}
-
 app.get('/', (req, res) => {
     res.redirect('https://chatbridge.live')
 })
@@ -69,7 +67,6 @@ io.use(function (socket, next) {
                 }
                 else {
                     connectedUsers.add(socket.uId)
-                    idMap[socket.id] = socket.uId
                     firebase.firestore().collection('users').doc(socket.uId).get()
                         .catch((error) => {
                             console.log('error retrieving', socket.uId, 'blocks from firebase', error)
@@ -130,6 +127,9 @@ io.on('connection', function (socket) {
                     socket.roomId = newRoomId
                     frontOfQueue.roomId = newRoomId
 
+                    socket.peerUid = frontOfQueue.uId
+                    frontOfQueue.peerUid = socket.uId
+
                     socket.join(newRoomId)
                     frontOfQueue.join(newRoomId)
 
@@ -172,15 +172,8 @@ io.on('connection', function (socket) {
     })
 
     socket.on('block_report', (data, callback) => {
-        // Looking up the socket by socket ID doesn't work if the
-        // socket we are looking for has since disconnected. For now,
-        // use a persistent map of socket ID -> user uID.
-        // 
-        // const uId = io.sockets.sockets.get(blockReportData.peerId).uId
-        //
-
         const fromUid = socket.uId
-        const toUid = idMap[data.peerId]
+        const toUid = socket.peerUid
 
         const dateInt = Date.now()
         const dateObj = admin.firestore.Timestamp.fromDate(new Date())
