@@ -8,7 +8,6 @@ const SERVICE_ACCOUNT = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from
 const admin = require('firebase-admin')
 const { v4: uuidv4 } = require('uuid')
 const generateName = require('sillyname')
-const Denque = require("denque")
 const crypto = require('crypto');
 
 const app = require('express')()
@@ -39,11 +38,6 @@ function generateTURNCredentials(secret) {
     };
 }
 
-var userQueue = new Denque()
-var userQueueCache = new Set()
-
-var roomsHistory = {}
-
 var connectedUsers = new Set()
 
 app.get('/', (req, res) => {
@@ -66,16 +60,24 @@ io.use(function (socket, next) {
                     next(new Error('unauthorised'))
                 }
                 else {
-                    connectedUsers.add(socket.uId)
+
                     firebase.firestore().collection('users').doc(socket.uId).get()
                         .catch((error) => {
                             console.log('error retrieving', socket.uId, 'blocks from firebase', error)
                         })
                         .then((doc) => {
                             const data = doc.data()
+                            if (data.university) {
+                                socket.university = data.university
+                            }
+                            else {
+                                next(new Error('unauthorised'))
+                            }
                             if (data.blocked) {
                                 socket.userBlocks = data.blocked
                             }
+                            socket.recents = {}
+                            connectedUsers.add(socket.uId)
                             next()
                         })
                 }
@@ -87,70 +89,54 @@ io.use(function (socket, next) {
 })
 
 io.on('connection', function (socket) {
-
     socket.on('search', () => {
-        if (!(userQueueCache.has(socket.uId))) {
-            console.log('(', socket.id, ') SEARCH')
+        socket.join(socket.university)
+        console.log(`SEARCH (${socket.university}): ${socket.id}`)
 
-            var frontOfQueue = userQueue.peekFront()
-            while (frontOfQueue && !frontOfQueue.connected) {
-                delete userQueueCache[frontOfQueue.uId]
-                userQueue.shift()
-                console.log('removed disconnected socket from queue')
-                frontOfQueue = userQueue.peekFront()
-            }
+        io.sockets.in(socket.university).allSockets().then((sockets) => {
+            var match = null
+            for (let candidateId of sockets) {
+                var candidate = io.sockets.sockets.get(candidateId)
+                const notSelf = socket.uId !== candidate.uId
+                const notRecent = !(candidate.uId in socket.recents && (Date.now() - socket.recents[candidate.uId]) <= 1800000)
+                const notBlocked = !(socket.userBlocks && candidate.uId in socket.userBlocks) && !(candidate.userBlocks && socket.uId in candidate.userBlocks)
 
-            if (frontOfQueue) {
-                const notRecent = !roomsHistory[socket.uId] || !roomsHistory[socket.uId][frontOfQueue.uId] || Date.now() - roomsHistory[socket.uId][frontOfQueue.uId] >= 1800000
-                const notBlocked = !(socket.userBlocks && frontOfQueue.uId in socket.userBlocks) && !(frontOfQueue.userBlocks && socket.uId in frontOfQueue.userBlocks)
-
-                if (notRecent && notBlocked) {
-                    console.log('Found match for ', socket.id, ' (', frontOfQueue.id, ')')
-
-                    userQueueCache.delete(userQueue.shift().uId)
-
-                    if (!roomsHistory[socket.uId]) {
-                        roomsHistory[socket.uId] = {}
-                    }
-
-                    if (!roomsHistory[frontOfQueue.uId]) {
-                        roomsHistory[frontOfQueue.uId] = {}
-                    }
-
-                    roomsHistory[socket.uId][frontOfQueue.uId] = Date.now()
-                    roomsHistory[frontOfQueue.uId][socket.uId] = Date.now()
-
-                    const newRoomId = uuidv4()
-                    const initiatorFriendlyName = generateName()
-                    const receiverFriendlyName = generateName()
-
-                    socket.roomId = newRoomId
-                    frontOfQueue.roomId = newRoomId
-
-                    socket.peerUid = frontOfQueue.uId
-                    frontOfQueue.peerUid = socket.uId
-
-                    socket.join(newRoomId)
-                    frontOfQueue.join(newRoomId)
-
-                    socket.friendlyName = initiatorFriendlyName
-                    frontOfQueue.friendlyName = receiverFriendlyName
-
-                    socket.emit('connect_peer', { peerId: frontOfQueue.id, localFriendlyName: initiatorFriendlyName, peerFriendlyName: receiverFriendlyName, isInitiator: true, turnCreds: generateTURNCredentials(TURN_SECRET) })
-                    frontOfQueue.emit('connect_peer', { peerId: socket.id, localFriendlyName: receiverFriendlyName, peerFriendlyName: initiatorFriendlyName, isInitiator: false, turnCreds: generateTURNCredentials(TURN_SECRET) })
-                }
-                else {
-                    userQueue.push(socket)
-                    userQueueCache.add(socket.uId)
-                    console.log('queue length ', userQueue.length)
+                if (notSelf && notRecent && notBlocked) {
+                    match = candidate
+                    break
                 }
             }
-            else {
-                userQueue.push(socket)
-                userQueueCache.add(socket.uId)
-                console.log('queue length ', userQueue.length)
+
+            if (match) {
+                console.log(`MATCH (${socket.university}): ${socket.id} <-> ${match.id}`)
+
+                socket.recents[match.uId] = Date.now()
+                match.recents[socket.uId] = Date.now()
+
+                const newRoomId = uuidv4()
+                const initiatorFriendlyName = generateName()
+                const receiverFriendlyName = generateName()
+
+                socket.leave(socket.university)
+                match.leave(match.university)
+
+                socket.join(newRoomId)
+                match.join(newRoomId)
+
+                socket.peerUid = match.uId
+                match.peerUid = socket.uId
+
+                socket.friendlyName = initiatorFriendlyName
+                match.friendlyName = receiverFriendlyName
+
+                socket.roomId = newRoomId
+                match.roomId = newRoomId
+
+                socket.emit('connect_peer', { peerId: match.id, localFriendlyName: initiatorFriendlyName, peerFriendlyName: receiverFriendlyName, isInitiator: true, turnCreds: generateTURNCredentials(TURN_SECRET) })
+                match.emit('connect_peer', { peerId: socket.id, localFriendlyName: receiverFriendlyName, peerFriendlyName: initiatorFriendlyName, isInitiator: false, turnCreds: generateTURNCredentials(TURN_SECRET) })
             }
-        }
+        })
+
     })
 
     socket.on('signal', (data) => {
@@ -160,9 +146,12 @@ io.on('connection', function (socket) {
     socket.on('disconnect_peer', () => {
         const roomId = socket.roomId
         socket.to(roomId).emit('disconnect_peer')
-        io.sockets.in(roomId).sockets.forEach((socket) => {
-            socket.leave(roomId)
-            socket.roomId = null
+        io.sockets.in(roomId).allSockets().then((socketIds) => {
+            socketIds.forEach((socketId) => {
+                var peer = io.sockets.sockets.get(socketId)
+                peer.leave(roomId)
+                peer.roomId = null
+            })
         })
     })
 
@@ -237,12 +226,14 @@ io.on('connection', function (socket) {
         if (socket.roomId) {
             const roomId = socket.roomId
             socket.to(roomId).emit('disconnect_peer')
-            io.sockets.in(roomId).sockets.forEach((socket) => {
-                socket.leave(roomId)
-                socket.roomId = null
+            io.sockets.in(roomId).allSockets().then((socketIds) => {
+                socketIds.forEach((socketId) => {
+                    var peer = io.sockets.sockets.get(socketId)
+                    peer.leave(roomId)
+                    peer.roomId = null
+                })
             })
         }
-        userQueueCache.delete(socket.uId)
         connectedUsers.delete(socket.uId)
     })
 })
