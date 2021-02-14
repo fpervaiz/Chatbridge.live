@@ -55,6 +55,7 @@ exports.userDocOnCreate = functions.region("europe-west2").auth.user().onCreate(
         .set({
           email: userRecord.email,
           displayName: userRecord.displayName,
+          university: "cam.ac.uk",
         })
         .catch(console.error);
   } else {

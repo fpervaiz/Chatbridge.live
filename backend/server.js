@@ -71,7 +71,8 @@ io.use(function (socket, next) {
                                 socket.university = data.university
                             }
                             else {
-                                next(new Error('unauthorised'))
+                                // next(new Error('unauthorised'))
+                                socket.university = "cam.ac.uk"
                             }
                             if (data.blocked) {
                                 socket.userBlocks = data.blocked
