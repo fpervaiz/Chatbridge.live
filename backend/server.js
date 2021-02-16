@@ -78,7 +78,6 @@ io.use(function (socket, next) {
                                 socket.userBlocks = data.blocked
                             }
                             socket.recents = {}
-                            connectedUsers.add(socket.uid)
                             next()
                         })
                 }
@@ -90,6 +89,8 @@ io.use(function (socket, next) {
 })
 
 io.on('connection', function (socket) {
+    connectedUsers.add(socket.uid)
+
     socket.on('search', () => {
         socket.join(socket.university)
         console.log(`SEARCH (${socket.university}): ${socket.id}`)
