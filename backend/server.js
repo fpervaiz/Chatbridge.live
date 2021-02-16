@@ -39,6 +39,7 @@ function generateTURNCredentials(secret) {
 }
 
 var connectedUsers = new Set()
+var recentsCache = {}
 
 app.get('/', (req, res) => {
     res.redirect('https://chatbridge.live')
@@ -67,17 +68,10 @@ io.use(function (socket, next) {
                         })
                         .then((doc) => {
                             const data = doc.data()
-                            if (data.university) {
-                                socket.university = data.university
-                            }
-                            else {
-                                // next(new Error('unauthorised'))
-                                socket.university = "cam.ac.uk"
-                            }
-                            if (data.blocked) {
-                                socket.userBlocks = data.blocked
-                            }
-                            socket.recents = {}
+
+                            socket.university = data?.university || "cam.ac.uk"
+                            socket.userBlocks = data?.blocked || {}
+                            socket.recents = recentsCache[socket.uid] || {}
                             next()
                         })
                 }
@@ -236,6 +230,7 @@ io.on('connection', function (socket) {
                 })
             })
         }
+        recentsCache[socket.uid] = socket.recents
         connectedUsers.delete(socket.uid)
     })
 })
