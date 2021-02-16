@@ -1,4 +1,5 @@
-import firebase from 'firebase';
+import firebase from 'firebase/app';
+import 'firebase/auth';
 
 const actions = {
     registerUserAction({ commit }, payload) {
@@ -68,10 +69,66 @@ const actions = {
                             });
                     }
                 })
-                .catch(() => {
+                .catch((error) => {
                     let message = {
                         type: "error",
-                        text: "Incorrect username or password.",
+                        text: "",
+                    }
+                    switch (error.code) {
+                        case "auth/user-disabled": {
+                            message.text = "Your account has temporarily been suspended. Please try again later."
+                            break;
+                        }
+                        case "auth/wrong-password": {
+                            message.text = "Incorrect username or password."
+                            break;
+                        }
+                        default: {
+                            message.text = "Error logging in. Please try again later."
+                        }
+                    }
+                    commit("setMessage", message)
+                    reject(message)
+                });
+        })
+    },
+
+    loginUserViaRavenAction({ commit }) {
+        var authProvider = new firebase.auth.GoogleAuthProvider();
+        authProvider.setCustomParameters({
+            hd: "cam.ac.uk",
+        });
+        return new Promise((resolve, reject) => {
+            firebase
+                .auth()
+                .signInWithPopup(authProvider)
+                .then((user) => {
+                    user.university = "University of Cambridge"
+                    let message = {
+                        type: "success",
+                        text: "Successfully logged in.",
+                    }
+                    commit("setMessage", message)
+                    commit("setUser", user);
+                    resolve(message)
+                })
+                .catch((error) => {
+                    let message = {
+                        type: "error",
+                        text: "",
+                    }
+                    switch (error.code) {
+                        case "auth/user-disabled": {
+                            message.text = "Your account has temporarily been suspended. Please try again later."
+                            break;
+                        }
+                        case "auth/wrong-password": {
+                            message.text = "Incorrect username or password."
+                            break;
+                        }
+                        default: {
+                            message.text = "Error logging in. Please try again later."
+                        }
                     }
                     commit("setMessage", message)
                     reject(message)
@@ -112,7 +169,7 @@ const actions = {
     checkAuthAction({ commit }) {
         return new Promise((resolve) => {
             firebase.auth().onAuthStateChanged(user => {
-                if (user) {
+                if (user && user.emailVerified) {
                     commit("setUser", user)
                     resolve(user)
                 }

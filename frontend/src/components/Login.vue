@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="fluid">
+  <v-container>
     <v-row justify="center" align="center" class="my-5">
       <h2>First time here?</h2>
       <v-btn class="mx-5" color="secondary" to="/register">Sign up</v-btn>
@@ -54,8 +54,6 @@
 export default {
   name: "Login",
 
-  computed: {},
-
   data: () => ({
     email: "",
     password: "",
@@ -97,8 +95,4 @@ export default {
 </script>
 
 <style scoped>
-.fluid {
-  margin: 0;
-  padding: 0;
-}
 </style>

@@ -7,7 +7,10 @@
 			"path": "backend"
 		},
 		{
-			"path": "functions"
+			"path": "firebase"
+		},
+		{
+			"path": "."
 		}
 	]
 }

@@ -1,18 +1,51 @@
 <template>
-  <v-app-bar app>
-    <v-row justify="center">
-      <v-col cols="3"> </v-col>
-      <v-col cols="6" justify="center" align="center" class="mt-1">
-        <router-link class="plain-link" to="/"
-          ><h2>UniOfCam.Chat</h2></router-link
-        >
-      </v-col>
-      <v-col cols="3" justify="right" align="right">
-        <v-btn v-if="userLoggedIn" @click="logout" icon>
-          <v-icon>mdi-logout</v-icon>
-        </v-btn>
-      </v-col>
-    </v-row>
+  <v-app-bar height="84" flat app>
+    <v-spacer></v-spacer>
+    <v-img
+      class="mx-1 mb-3"
+      src="@/assets/chat.svg"
+      max-height="36"
+      max-width="36"
+      contain
+    ></v-img>
+    <v-app-bar-title class="ml-2">
+      <router-link class="logo" to="/">
+        chatbridge
+      </router-link></v-app-bar-title
+    >
+    <v-layout align-center justify-end>
+      <v-menu v-if="userLoggedIn" v-model="menu" offset-y>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn v-bind="attrs" v-on="on" icon>
+            <v-icon>mdi-account</v-icon>
+          </v-btn>
+        </template>
+
+        <v-card>
+          <v-list>
+            <v-list-item>
+              <v-list-item-avatar>
+                <v-icon>mdi-account</v-icon>
+              </v-list-item-avatar>
+
+              <v-list-item-content>
+                <v-list-item-title>{{ userEmail }}</v-list-item-title>
+                <v-list-item-subtitle
+                  >University of Cambridge</v-list-item-subtitle
+                >
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+
+          <v-divider></v-divider>
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" text @click="logout()"> Logout </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-menu>
+    </v-layout>
   </v-app-bar>
 </template>
 
@@ -28,6 +61,14 @@ export default {
     userDisplayName() {
       return this.$store.getters.getUserDisplayName;
     },
+
+    userEmail() {
+      return this.$store.getters.getUserEmail;
+    },
+
+    userUniversity() {
+      return this.$store.getters.university;
+    },
   },
 
   methods: {
@@ -41,7 +82,9 @@ export default {
 </script>
 
 <style scoped>
-.plain-link {
+.logo {
+  font-family: "a Affirmation";
+  font-size: 56px;
   text-decoration: none;
   color: white;
 }

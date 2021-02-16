@@ -1,118 +1,273 @@
-const app = require('express')();
-const http = require('http').Server(app);
+require('dotenv').config()
+
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:8080'
+const PORT = process.env.PORT || 3000
+const TURN_SECRET = process.env.TURN_SECRET
+const SERVICE_ACCOUNT = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from(process.env.FIREBASE_CONFIG_B64, 'base64').toString('ascii')) : require('./firebaseSA.credential.json')
+
+const admin = require('firebase-admin')
+const { v4: uuidv4 } = require('uuid')
+const generateName = require('sillyname')
+const crypto = require('crypto');
+
+const app = require('express')()
+const http = require('http').Server(app)
 const io = require('socket.io')(http, {
     cors: {
-        origin: process.env.CORS_ORIGIN,
+        origin: CORS_ORIGIN,
         methods: ['GET', 'POST']
     }
+})
+
+var firebase = admin.initializeApp({
+    credential: admin.credential.cert(SERVICE_ACCOUNT)
 });
-const admin = require('firebase-admin')
-const { v4: uuidv4 } = require('uuid');
-const rug = require('random-username-generator');
 
-var firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
+function generateTURNCredentials(secret) {
+    const unixTimeStamp = parseInt(Date.now() / 1000) + 3 * 3600
+    const randInt = Math.floor(Math.random() * 100001)
+    const username = [unixTimeStamp, randInt, 'service.chatbridge.live'].join(':')
+    var hmac = crypto.createHmac('sha1', secret);
+    hmac.setEncoding('base64');
+    hmac.write(username);
+    hmac.end();
+    const password = hmac.read();
+    return {
+        username: username,
+        password: password
+    };
+}
 
-var firebase = admin.initializeApp(firebaseConfig)
+var connectedUsers = new Set()
+var recentsCache = {}
+
+var queueStats = {
+    'cam.ac.uk': {
+        queue: 'queue_cam.ac.uk',
+        chatting: 0,
+        waiting: 0
+    }
+}
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
-});
+    res.redirect('https://chatbridge.live')
+})
 
-var userQueue = [];
-var userQueueCache = new Set();
-var sessionHistory = {};
-var rooms = {};
-var tokenCache = {};
+setInterval(async () => {
+    for (let university in queueStats) {
+        // Do we want waiting number = number in queue OR
+        // waiting number = number simply connected from that university?
+        // const universityQueue = queueStats[university].queue
+        // queueStats[university].waiting = (await io.sockets.in(universityQueue).allSockets()).size
+
+        queueStats[university].waiting = (await io.sockets.in(university).allSockets()).size - queueStats[university].chatting
+        io.to(university).emit('queue_stats', queueStats[university])
+    }
+}, 10000)
 
 io.use(function (socket, next) {
-    const idToken = socket.handshake.auth.idToken;
+    const idToken = socket.handshake.auth.idToken
     if (idToken) {
-        if (idToken in tokenCache) {
-            socket.uId = tokenCache[idToken]
-            next()
-        }
-        else {
-            firebase.auth().verifyIdToken(idToken).catch((error) => {
-                const err = new Error('Unauthorised');
-                next(err);
+        firebase.auth().verifyIdToken(idToken, true)
+            .catch((error) => {
+                console.log(`VERIFY_TOKEN_ERROR: ${error}`)
+                next(new Error('unauthorised'))
             }).then((decodedToken) => {
-                socket.uId = decodedToken.uid;
-                tokenCache[idToken] = decodedToken.uid;
-                next();
-            })
-        }
-    } else {
-        const err = new Error('Unauthorised');
-        next(err);
-    }
-})
-    .on('connection', function (socket) {
-        socket.emit('debug_message', socket.uId)
-
-        socket.on('message', function (message) {
-            io.emit('message', message);
-        });
-
-        socket.on('search', function () {
-            if (!(userQueueCache.has(socket.uId))) {
-                console.log('(', socket.id, ') SEARCH')
-                if (userQueue[0]) {
-                    var frontOfQueue = userQueue[0]
-                    if (!sessionHistory[socket.uId] || !sessionHistory[socket.uId][frontOfQueue.uId] || Date.now() - sessionHistory[socket.uId][frontOfQueue.uId] >= 1800000) {
-                        console.log('Found match for ', socket.id, ' (', frontOfQueue.id, ')');
-
-                        userQueueCache.delete(userQueue.shift().uId);
-
-                        if (!sessionHistory[socket.uId]) {
-                            sessionHistory[socket.uId] = {};
-                        }
-
-                        if (!sessionHistory[frontOfQueue.uId]) {
-                            sessionHistory[frontOfQueue.uId] = {};
-                        }
-
-                        sessionHistory[socket.uId][frontOfQueue.uId] = Date.now();
-                        sessionHistory[frontOfQueue.uId][socket.uId] = Date.now();
-
-                        socket.friendlyName = rug.generate();
-                        frontOfQueue.friendlyName = rug.generate();
-
-                        const newRoomId = uuidv4();
-                        const initiatorId = socket.id;
-                        const receiverId = frontOfQueue.id;
-                        const initiatorFriendlyName = socket.friendlyName
-                        const receiverFriendlyName = frontOfQueue.friendlyName
-
-                        rooms[newRoomId] = {
-                            [initiatorId]: socket,
-                            [receiverId]: frontOfQueue
-                        }
-                        socket.emit('connect_peer', { roomId: newRoomId, peerId: receiverId, peerFriendlyName: receiverFriendlyName, localFriendlyName: initiatorFriendlyName, isInitiator: true });
-                        frontOfQueue.emit('connect_peer', { roomId: newRoomId, peerId: initiatorId, peerFriendlyName: initiatorFriendlyName, localFriendlyName: receiverFriendlyName, isInitiator: false });
-                    }
-                    else {
-                        userQueue.push(socket);
-                        userQueueCache.add(socket.uId);
-                        console.log('queue length ', userQueue.length)
-                    }
+                socket.uid = decodedToken.uid
+                if (connectedUsers.has(socket.uid)) {
+                    next(new Error('already_connected'))
+                }
+                else if (!decodedToken.email.toLowerCase().endsWith('@cam.ac.uk')) {
+                    next(new Error('unauthorised'))
                 }
                 else {
-                    userQueue.push(socket);
-                    userQueueCache.add(socket.uId);
-                    console.log('queue length ', userQueue.length)
+
+                    firebase.firestore().collection('users').doc(socket.uid).get()
+                        .catch((error) => {
+                            console.log(`FIRESTORE_GET_USER_ERROR: ${socket.uid}: ${error}`)
+                        })
+                        .then((doc) => {
+                            const data = doc.data()
+
+                            socket.university = data?.university || 'cam.ac.uk'
+                            socket.university_queue = 'queue_' + socket.university
+                            socket.userBlocks = data?.blocked || {}
+                            socket.recents = recentsCache[socket.uid] || {}
+                            next()
+                        })
+                }
+
+            })
+    } else {
+        next(new Error('unauthorised'))
+    }
+})
+
+io.on('connection', function (socket) {
+    socket.join(socket.university)
+    connectedUsers.add(socket.uid)
+
+    socket.on('search', () => {
+        socket.join(socket.university_queue)
+
+        console.log(`SEARCH (${socket.university_queue}): ${socket.id}`)
+
+        io.sockets.in(socket.university_queue).allSockets().then((sockets) => {
+            var match = null
+            for (let candidateId of sockets) {
+                var candidate = io.sockets.sockets.get(candidateId)
+                const notSelf = socket.uid !== candidate.uid
+                const notRecent = !(candidate.uid in socket.recents && (Date.now() - socket.recents[candidate.uid]) <= 1800000)
+                const notBlocked = !(socket.userBlocks && candidate.uid in socket.userBlocks) && !(candidate.userBlocks && socket.uid in candidate.userBlocks)
+
+                if (notSelf && notRecent && notBlocked) {
+                    match = candidate
+                    break
                 }
             }
-        });
 
-        socket.on('signal_send', (data) => {
-            const senderPeerId = socket.id;
-            console.log(socket.id, 'SIGNAL_SEND', data.roomId, data.destinationPeerId)
-            var peerSocket = rooms[data.roomId][data.destinationPeerId];
-            peerSocket.emit('signal_receive', { roomId: data.roomId, peerId: senderPeerId, signalData: data.signalData });
+            if (match) {
+                console.log(`MATCH (${socket.university_queue}): ${socket.id} <-> ${match.id}`)
+
+                socket.recents[match.uid] = Date.now()
+                match.recents[socket.uid] = Date.now()
+
+                const newRoomId = uuidv4()
+                const initiatorFriendlyName = generateName()
+                const receiverFriendlyName = generateName()
+
+                socket.leave(socket.university_queue)
+                match.leave(match.university_queue)
+
+                socket.join(newRoomId)
+                match.join(newRoomId)
+
+                socket.peerUid = match.uid
+                match.peerUid = socket.uid
+
+                socket.friendlyName = initiatorFriendlyName
+                match.friendlyName = receiverFriendlyName
+
+                socket.roomId = newRoomId
+                match.roomId = newRoomId
+
+                queueStats[socket.university].chatting += 2
+
+                socket.emit('connect_peer', { peerId: match.id, localFriendlyName: initiatorFriendlyName, peerFriendlyName: receiverFriendlyName, isInitiator: true, turnCreds: generateTURNCredentials(TURN_SECRET) })
+                match.emit('connect_peer', { peerId: socket.id, localFriendlyName: receiverFriendlyName, peerFriendlyName: initiatorFriendlyName, isInitiator: false, turnCreds: generateTURNCredentials(TURN_SECRET) })
+            }
         })
-    });
 
-http.listen(process.env.PORT, () => {
-    console.log('CORS origin:', process.env.CORS_ORIGIN);
-    console.log('listening on *:', process.env.PORT);
-});
+    })
+
+    socket.on('signal', (data) => {
+        socket.to(socket.roomId).emit('signal', { signalData: data.signalData })
+    })
+
+    socket.on('disconnect_peer', () => {
+        const roomId = socket.roomId
+        socket.to(roomId).emit('disconnect_peer')
+        io.sockets.in(roomId).allSockets().then((socketIds) => {
+            socketIds.forEach((socketId) => {
+                var peer = io.sockets.sockets.get(socketId)
+                peer.leave(roomId)
+                queueStats[socket.university].chatting -= 1
+                peer.roomId = null
+            })
+        })
+    })
+
+    socket.on('handle_peer_error', () => {
+        socket.leave(socket.roomId)
+        queueStats[socket.university].chatting -= 1
+        socket.roomId = null
+    })
+
+    socket.on('block_report', (data, callback) => {
+        const fromUid = socket.uid
+        const toUid = socket.peerUid
+
+        const dateInt = Date.now()
+        const dateObj = admin.firestore.Timestamp.fromDate(new Date())
+
+        if (data.formData.toBlock) {
+            if (!(socket.userBlocks)) {
+                socket.userBlocks = {}
+            }
+
+            socket.userBlocks[toUid] = Date()
+
+            firebase.firestore().collection('users').doc(fromUid)
+                .set({ blocked: { [toUid]: dateObj } }, { merge: true })
+                .then(() => {
+                    console.log(`BLOCKED (${socket.university}): ${fromUid} -> ${toUid}`)
+                })
+                .catch((error) => {
+                    console.log(`BLOCK_ERROR (${socket.university}): ${fromUid} -> ${toUid}: ${error}`)
+                    callback({
+                        status: 'error'
+                    })
+                })
+        }
+
+        if (data.formData.toReport) {
+            var reportedSocket = io.sockets.sockets.get(data.peerId)
+            if (reportedSocket) {
+                reportedSocket.emit('force_logout');
+            }
+
+            const report = {
+                reported: toUid,
+                from: fromUid,
+                time: dateObj,
+                reason: data.formData.reportReason
+            }
+
+            firebase.firestore().collection('reports').add(report).then((docRef) => {
+                const reportRef = {
+                    [dateInt]: docRef
+                }
+                firebase.firestore().collection('users').doc(toUid)
+                    .set({ reports: reportRef }, { merge: true }).then(() => {
+                        console.log(`REPORTED (${socket.university}): ${fromUid} -> ${toUid}`)
+                    })
+            })
+                .catch((error) => {
+                    console.log(`REPORT_ERROR (${socket.university}): ${fromUid} -> ${toUid}: ${error}`)
+                    callback({
+                        status: 'error'
+                    })
+                })
+        }
+
+        callback({
+            status: 'ok'
+        })
+    })
+
+    socket.on('disconnect', () => {
+        if (socket.roomId) {
+            const roomId = socket.roomId
+            socket.to(roomId).emit('disconnect_peer')
+            queueStats[socket.university].chatting -= 2
+            io.sockets.in(roomId).allSockets().then((socketIds) => {
+                socketIds.forEach((socketId) => {
+                    var peer = io.sockets.sockets.get(socketId)
+                    peer.leave(roomId)
+                    peer.roomId = null
+                })
+            })
+        }
+
+        recentsCache[socket.uid] = socket.recents
+        connectedUsers.delete(socket.uid)
+    })
+})
+
+http.listen(PORT, () => {
+    console.log('---------------------------------------------------------')
+    console.log('service.chatbridge.live')
+    console.log(`CORS origin: ${CORS_ORIGIN}`)
+    console.log(`Listening on *:${PORT}`)
+    console.log('')
+})

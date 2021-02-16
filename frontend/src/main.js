@@ -1,11 +1,12 @@
 import Vue from 'vue'
 import App from './App.vue'
 
-import vuetify from './plugins/vuetify';
+import vuetify from './plugins/vuetify'
 import router from './router'
 import store from './store'
 
-import firebase from "firebase";
+import firebase from "firebase/app"
+import "firebase/auth"
 
 var firebaseConfig = {
   apiKey: process.env.VUE_APP_FIREBASE_API_KEY,

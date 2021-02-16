@@ -7,15 +7,13 @@
       <v-row justify="center" no-gutters>
         <v-btn color="white" text class="my-1"> About </v-btn>
         <v-btn color="white" text class="my-1"> Contact </v-btn>
-        <!--
         <v-btn color="white" text class="my-1"> Terms Of Use </v-btn>
         <v-btn color="white" text class="my-1"> Privacy Policy </v-btn>
-        -->
       </v-row>
     </v-container>
     <!--
     <v-col class="py-1 text-center white--text" cols="12">
-      &copy; {{ new Date().getFullYear() }} — <strong>uniofcam.chat</strong>
+      &copy; {{ new Date().getFullYear() }} — <strong>chatbridge.live</strong>
     </v-col>
     -->
   </v-footer>

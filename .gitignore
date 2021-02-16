@@ -6,6 +6,7 @@ backend/dist
 frontend/dist
 
 # local env files
+.env
 .env.local
 .env.*.local
 
@@ -23,3 +24,5 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+*.credential.json
