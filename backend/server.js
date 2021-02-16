@@ -63,7 +63,7 @@ setInterval(async () => {
         queueStats[university].waiting = (await io.sockets.in(university).allSockets()).size - queueStats[university].chatting
         io.to(university).emit('queue_stats', queueStats[university])
     }
-}, 2000)
+}, 10000)
 
 io.use(function (socket, next) {
     const idToken = socket.handshake.auth.idToken
