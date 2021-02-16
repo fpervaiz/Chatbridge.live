@@ -14,6 +14,7 @@
           :width="peerWidth"
           height="auto"
           autoplay="true"
+          playsinline
           id="peerCam"
           v-on:click="togglePeerShrink()"
           :src-object.prop.camel="peerCamStream"
@@ -31,6 +32,7 @@
           :width="userWidth"
           height="auto"
           autoplay="true"
+          playsinline
           id="userCam"
           v-on:click="toggleUserShrink()"
           muted="muted"
