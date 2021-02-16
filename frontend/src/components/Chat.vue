@@ -40,6 +40,19 @@
 
       <v-col class="col-xs">
         <div class="mb-3">
+          <p v-if="queueStats">
+            <span class="dot-green mr-2"></span>
+            <span class="font-weight-bold"
+              >{{ queueStats.waiting + queueStats.chatting }} online now
+            </span>
+            <span class="font-weight-regular text--secondary"
+              >({{ queueStats.chatting }} chatting,
+              {{ queueStats.waiting }} waiting)</span
+            >
+          </p>
+          <v-skeleton-loader v-else type="text"></v-skeleton-loader>
+        </div>
+        <div class="mb-3">
           <v-btn class="mr-2 mb-2" @click="search" :disabled="!enableSearch"
             ><v-icon dark left> mdi-account-search </v-icon>Find me someone
           </v-btn>
@@ -217,6 +230,8 @@ export default {
 
       matchingSocket: null,
       signalingSocket: null,
+
+      queueStats: null,
 
       localPeer: null,
 
@@ -635,6 +650,10 @@ export default {
         // });
       });
 
+      self.matchingSocket.on("queue_stats", (stats) => {
+        this.queueStats = stats;
+      });
+
       self.matchingSocket.on("force_logout", () => {
         this.$store.dispatch("logoutUserAction").then(() => {
           this.$router.replace("/");
@@ -695,5 +714,12 @@ video {
 #chatbox {
   overflow-y: auto;
   max-height: 30vh;
+}
+.dot-green {
+  height: 10px;
+  width: 10px;
+  background-color: green;
+  border-radius: 50%;
+  display: inline-block;
 }
 </style>

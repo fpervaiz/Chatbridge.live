@@ -3,7 +3,7 @@ require('dotenv').config()
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:8080'
 const PORT = process.env.PORT || 3000
 const TURN_SECRET = process.env.TURN_SECRET
-const SERVICE_ACCOUNT = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from(process.env.FIREBASE_CONFIG_B64, 'base64').toString('ascii')) : require("./firebaseSA.credential.json")
+const SERVICE_ACCOUNT = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from(process.env.FIREBASE_CONFIG_B64, 'base64').toString('ascii')) : require('./firebaseSA.credential.json')
 
 const admin = require('firebase-admin')
 const { v4: uuidv4 } = require('uuid')
@@ -41,9 +41,29 @@ function generateTURNCredentials(secret) {
 var connectedUsers = new Set()
 var recentsCache = {}
 
+var queueStats = {
+    'cam.ac.uk': {
+        queue: 'queue_cam.ac.uk',
+        chatting: 0,
+        waiting: 0
+    }
+}
+
 app.get('/', (req, res) => {
     res.redirect('https://chatbridge.live')
 })
+
+setInterval(async () => {
+    for (let university in queueStats) {
+        // Do we want waiting number = number in queue OR
+        // waiting number = number simply connected from that university?
+        // const universityQueue = queueStats[university].queue
+        // queueStats[university].waiting = (await io.sockets.in(universityQueue).allSockets()).size
+
+        queueStats[university].waiting = (await io.sockets.in(university).allSockets()).size - queueStats[university].chatting
+        io.to(university).emit('queue_stats', queueStats[university])
+    }
+}, 2000)
 
 io.use(function (socket, next) {
     const idToken = socket.handshake.auth.idToken
@@ -69,7 +89,8 @@ io.use(function (socket, next) {
                         .then((doc) => {
                             const data = doc.data()
 
-                            socket.university = data?.university || "cam.ac.uk"
+                            socket.university = data?.university || 'cam.ac.uk'
+                            socket.university_queue = 'queue_' + socket.university
                             socket.userBlocks = data?.blocked || {}
                             socket.recents = recentsCache[socket.uid] || {}
                             next()
@@ -83,13 +104,15 @@ io.use(function (socket, next) {
 })
 
 io.on('connection', function (socket) {
+    socket.join(socket.university)
     connectedUsers.add(socket.uid)
 
     socket.on('search', () => {
-        socket.join(socket.university)
-        console.log(`SEARCH (${socket.university}): ${socket.id}`)
+        socket.join(socket.university_queue)
 
-        io.sockets.in(socket.university).allSockets().then((sockets) => {
+        console.log(`SEARCH (${socket.university_queue}): ${socket.id}`)
+
+        io.sockets.in(socket.university_queue).allSockets().then((sockets) => {
             var match = null
             for (let candidateId of sockets) {
                 var candidate = io.sockets.sockets.get(candidateId)
@@ -104,7 +127,7 @@ io.on('connection', function (socket) {
             }
 
             if (match) {
-                console.log(`MATCH (${socket.university}): ${socket.id} <-> ${match.id}`)
+                console.log(`MATCH (${socket.university_queue}): ${socket.id} <-> ${match.id}`)
 
                 socket.recents[match.uid] = Date.now()
                 match.recents[socket.uid] = Date.now()
@@ -113,8 +136,8 @@ io.on('connection', function (socket) {
                 const initiatorFriendlyName = generateName()
                 const receiverFriendlyName = generateName()
 
-                socket.leave(socket.university)
-                match.leave(match.university)
+                socket.leave(socket.university_queue)
+                match.leave(match.university_queue)
 
                 socket.join(newRoomId)
                 match.join(newRoomId)
@@ -127,6 +150,8 @@ io.on('connection', function (socket) {
 
                 socket.roomId = newRoomId
                 match.roomId = newRoomId
+
+                queueStats[socket.university].chatting += 2
 
                 socket.emit('connect_peer', { peerId: match.id, localFriendlyName: initiatorFriendlyName, peerFriendlyName: receiverFriendlyName, isInitiator: true, turnCreds: generateTURNCredentials(TURN_SECRET) })
                 match.emit('connect_peer', { peerId: socket.id, localFriendlyName: receiverFriendlyName, peerFriendlyName: initiatorFriendlyName, isInitiator: false, turnCreds: generateTURNCredentials(TURN_SECRET) })
@@ -146,6 +171,7 @@ io.on('connection', function (socket) {
             socketIds.forEach((socketId) => {
                 var peer = io.sockets.sockets.get(socketId)
                 peer.leave(roomId)
+                queueStats[socket.university].chatting -= 1
                 peer.roomId = null
             })
         })
@@ -153,6 +179,7 @@ io.on('connection', function (socket) {
 
     socket.on('handle_peer_error', () => {
         socket.leave(socket.roomId)
+        queueStats[socket.university].chatting -= 1
         socket.roomId = null
     })
 
@@ -186,7 +213,7 @@ io.on('connection', function (socket) {
         if (data.formData.toReport) {
             var reportedSocket = io.sockets.sockets.get(data.peerId)
             if (reportedSocket) {
-                reportedSocket.emit("force_logout");
+                reportedSocket.emit('force_logout');
             }
 
             const report = {
@@ -222,6 +249,7 @@ io.on('connection', function (socket) {
         if (socket.roomId) {
             const roomId = socket.roomId
             socket.to(roomId).emit('disconnect_peer')
+            queueStats[socket.university].chatting -= 2
             io.sockets.in(roomId).allSockets().then((socketIds) => {
                 socketIds.forEach((socketId) => {
                     var peer = io.sockets.sockets.get(socketId)
@@ -230,6 +258,7 @@ io.on('connection', function (socket) {
                 })
             })
         }
+
         recentsCache[socket.uid] = socket.recents
         connectedUsers.delete(socket.uid)
     })
