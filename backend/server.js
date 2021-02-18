@@ -1,6 +1,6 @@
 require('dotenv').config()
 
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:8080'
+const CORS_ORIGIN = process.env.CORS_ORIGIN ? new Set(JSON.parse(process.env.CORS_ORIGIN)) : new Set(['http://localhost:8080'])
 const PORT = process.env.PORT || 3000
 const TURN_SECRET = process.env.TURN_SECRET
 const SERVICE_ACCOUNT = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from(process.env.FIREBASE_CONFIG_B64, 'base64').toString('ascii')) : require('./firebaseSA.credential.json')
@@ -14,8 +14,7 @@ const app = require('express')()
 const http = require('http').Server(app)
 const io = require('socket.io')(http, {
     cors: {
-        origin: CORS_ORIGIN,
-        methods: ['GET', 'POST']
+        origin: CORS_ORIGIN
     }
 })
 
@@ -65,47 +64,69 @@ setInterval(async () => {
     }
 }, 10000)
 
-io.use(function (socket, next) {
+io.use((socket, next) => {
+    if (socket.request.headers.origin && CORS_ORIGIN.has(socket.request.headers.origin)) {
+        next()
+    }
+    else {
+        console.log(`BLOCKED_ORIGIN: ${socket.request.headers.origin}`)
+        next(new Error('unauthorised'))
+    }
+})
+
+io.use((socket, next) => {
     const idToken = socket.handshake.auth.idToken
+
     if (idToken) {
         firebase.auth().verifyIdToken(idToken, true)
+            .then((decodedToken) => {
+                socket.uid = decodedToken.uid
+                socket.email = decodedToken.email
+                next()
+            })
             .catch((error) => {
                 console.log(`VERIFY_TOKEN_ERROR: ${error}`)
                 next(new Error('unauthorised'))
-            }).then((decodedToken) => {
-                socket.uid = decodedToken.uid
-                if (connectedUsers.has(socket.uid)) {
-                    next(new Error('already_connected'))
-                }
-                else if (!decodedToken.email.toLowerCase().endsWith('@cam.ac.uk')) {
-                    next(new Error('unauthorised'))
-                }
-                else {
-
-                    firebase.firestore().collection('users').doc(socket.uid).get()
-                        .catch((error) => {
-                            console.log(`FIRESTORE_GET_USER_ERROR: ${socket.uid}: ${error}`)
-                        })
-                        .then((doc) => {
-                            const data = doc.data()
-
-                            socket.university = data?.university || 'cam.ac.uk'
-                            socket.university_queue = 'queue_' + socket.university
-                            socket.userBlocks = data?.blocked || {}
-                            socket.recents = recentsCache[socket.uid] || {}
-                            next()
-                        })
-                }
-
             })
-    } else {
+    }
+    else {
+        new Error('unauthorised')
+    }
+})
+
+io.use((socket, next) => {
+    if (connectedUsers.has(socket.uid)) {
+        next(new Error('already_connected'))
+    }
+    else if (!socket.email.toLowerCase().endsWith('@cam.ac.uk')) {
         next(new Error('unauthorised'))
     }
+    else {
+        next()
+    }
+})
+
+io.use((socket, next) => {
+    firebase.firestore().collection('users').doc(socket.uid).get()
+        .then((doc) => {
+            const data = doc.data()
+
+            socket.university = data?.university || 'cam.ac.uk'
+            socket.university_queue = 'queue_' + socket.university
+            socket.userBlocks = data?.blocked || {}
+            socket.recents = recentsCache[socket.uid] || {}
+            next()
+        })
+        .catch((error) => {
+            console.log(`FIRESTORE_GET_USER_ERROR: ${socket.uid}: ${error}`)
+            next(new Error('unauthorised'))
+        })
 })
 
 io.on('connection', function (socket) {
     socket.join(socket.university)
     connectedUsers.add(socket.uid)
+    console.log(`CONNECTED (${socket.university_queue}): ${socket.id}`)
 
     socket.on('search', () => {
         socket.join(socket.university_queue)
@@ -261,13 +282,14 @@ io.on('connection', function (socket) {
 
         recentsCache[socket.uid] = socket.recents
         connectedUsers.delete(socket.uid)
+        console.log(`DISCONNECTED (${socket.university_queue}): ${socket.id}`)
     })
 })
 
 http.listen(PORT, () => {
     console.log('---------------------------------------------------------')
     console.log('service.chatbridge.live')
-    console.log(`CORS origin: ${CORS_ORIGIN}`)
+    console.log(`CORS origin:`, CORS_ORIGIN)
     console.log(`Listening on *:${PORT}`)
     console.log('')
 })
