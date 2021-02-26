@@ -23,7 +23,7 @@
       </li>
 
       <li>
-        <h4>Respect each others' privacy.</h4>
+        <h4>Respect each other's privacy.</h4>
         <p class="text--secondary">
           No one has any obligation to reveal their identity. Don't screenshot
           or record anyone without asking first.
