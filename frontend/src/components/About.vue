@@ -15,10 +15,7 @@
       you encounter some more of the 20,000 students at our university.
     </p>
     <h3>How does it work?</h3>
-    <p>
-      Chatbridge is heavily inspired by Chatroulette and Omegle, and works in a
-      very similar way.
-    </p>
+    <p>It's really simple!</p>
     <ul>
       <li>Login via Raven to prove you're a member of the University.</li>
       <li>
@@ -41,10 +38,11 @@
     <p>
       You can block a user for any reason by clicking 'Block/Report' and
       completing the form. Blocking a user means you will never be connected to
-      them again. And while we hope this never happens, if you do come across
-      anyone using the service inappropriately, please report them as well. This
-      will help us keep bad users off the website. You can still block or report
-      a user even if the chat has ended.
+      them again. And while we hope this never happens, if you come across
+      anyone breaking the
+      <router-link to="/rules">Community Rules</router-link>, please report them
+      as well. This will help us keep bad users off the website. You can still
+      block or report a user even if the chat has ended.
     </p>
     <h3>Is it secure?</h3>
     <p>
