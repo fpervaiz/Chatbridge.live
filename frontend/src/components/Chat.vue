@@ -41,7 +41,19 @@
       </v-col>
 
       <v-col class="col-xs">
-        <div class="mb-3">
+        <div>
+          <v-expansion-panels>
+            <v-expansion-panel>
+              <v-expansion-panel-header
+                >Community Rules</v-expansion-panel-header
+              >
+              <v-expansion-panel-content>
+                <RuleList />
+              </v-expansion-panel-content>
+            </v-expansion-panel>
+          </v-expansion-panels>
+        </div>
+        <div class="my-3">
           <p v-if="queueStats">
             <span class="dot-green mr-2"></span>
             <span class="font-weight-bold"
@@ -209,6 +221,8 @@ import io from "socket.io-client";
 import Peer from "simple-peer";
 import Autolinker from "autolinker";
 
+import RuleList from "./RuleList";
+
 const appStates = {
   WS_CONNECTING: 1,
   STARTING: 2,
@@ -225,6 +239,8 @@ const appStates = {
 
 export default {
   name: "Chat",
+
+  components: { RuleList },
 
   data() {
     return {
