@@ -60,18 +60,6 @@
       </v-col>
 
       <v-col class="col-xs">
-        <div>
-          <v-expansion-panels>
-            <v-expansion-panel>
-              <v-expansion-panel-header
-                >Community Rules</v-expansion-panel-header
-              >
-              <v-expansion-panel-content>
-                <RuleList />
-              </v-expansion-panel-content>
-            </v-expansion-panel>
-          </v-expansion-panels>
-        </div>
         <div class="my-3">
           <p v-if="queueStats">
             <span class="dot-green mr-2"></span>
@@ -144,6 +132,18 @@
             :disabled="!userConnected"
             solo
           ></v-text-field>
+        </div>
+        <div>
+          <v-expansion-panels>
+            <v-expansion-panel>
+              <v-expansion-panel-header
+                >Community Rules</v-expansion-panel-header
+              >
+              <v-expansion-panel-content>
+                <RuleList />
+              </v-expansion-panel-content>
+            </v-expansion-panel>
+          </v-expansion-panels>
         </div>
       </v-col>
     </v-row>
