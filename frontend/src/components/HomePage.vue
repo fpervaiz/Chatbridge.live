@@ -9,7 +9,7 @@
         <h2 class="subheading font-weight-regular">{{ subtitle }}</h2>
         <hr class="my-5" />
         <p>You must be a University of Cambridge student to use Chatbridge.</p>
-        <v-btn to="/chat" class="mx-2" color="primary">Start chatting</v-btn>
+        <v-btn to="/rules" class="mx-2" color="primary">Start chatting</v-btn>
         <v-btn to="/about" class="mx-2" color="secondary">Tell me more</v-btn>
       </v-col>
     </v-row>
