@@ -23,11 +23,6 @@
       </li>
 
       <li>
-        <h4>Don't do anything illegal.</h4>
-        <p class="text--secondary">Hopefully this one goes without saying.</p>
-      </li>
-
-      <li>
         <h4>Respect each others' privacy.</h4>
         <p class="text--secondary">
           No one has any obligation to reveal their identity. Don't screenshot
