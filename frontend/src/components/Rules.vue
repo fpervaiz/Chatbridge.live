@@ -50,7 +50,9 @@
         </p>
         <div class="my-5 text-center">
           <v-btn to="/chat" class="mx-2" color="primary">Continue</v-btn>
-          <v-btn to="-1" class="mx-2" color="secondary">Go back</v-btn>
+          <v-btn @click="$router.go(-1)" class="mx-2" color="secondary"
+            >Go back</v-btn
+          >
         </div>
       </v-col>
     </v-row>
