@@ -60,7 +60,7 @@
       </v-col>
 
       <v-col class="col-xs">
-        <div class="my-3">
+        <div class="mb-3">
           <p v-if="queueStats">
             <span class="dot-green mr-2"></span>
             <span class="font-weight-bold"
