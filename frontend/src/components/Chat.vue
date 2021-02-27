@@ -4,6 +4,16 @@
       <v-col class="col-xs">
         <h4>
           Who?<span v-if="showRemoteName"> ({{ showRemoteName }})</span>
+          <span v-if="peerCamStream">
+            <v-btn icon>
+              <v-icon @click="togglePeerShrink()" v-if="peerCamShrink"
+                >mdi-fullscreen</v-icon
+              >
+              <v-icon @click="togglePeerShrink()" v-else
+                >mdi-fullscreen-exit</v-icon
+              >
+            </v-btn></span
+          >
         </h4>
         <div v-if="!showPeerStream">
           <h2>{{ peerStatusHeading }}</h2>
@@ -16,13 +26,23 @@
           autoplay="true"
           playsinline
           id="peerCam"
-          v-on:click="togglePeerShrink()"
           :src-object.prop.camel="peerCamStream"
         ></video>
 
         <h4>
-          You<span v-if="showLocalName"> ({{ showLocalName }})</span>
+          You<span v-if="showLocalName"> ({{ showLocalName }}) </span>
+          <span v-if="userCamStream">
+            <v-btn icon>
+              <v-icon @click="toggleUserShrink()" v-if="userCamShrink"
+                >mdi-fullscreen</v-icon
+              >
+              <v-icon @click="toggleUserShrink()" v-else
+                >mdi-fullscreen-exit</v-icon
+              >
+            </v-btn></span
+          >
         </h4>
+
         <div v-if="!userCamStream">
           <h2>No webcam found!</h2>
           <p>Connect a webcam or allow access.</p>
@@ -34,7 +54,6 @@
           autoplay="true"
           playsinline
           id="userCam"
-          v-on:click="toggleUserShrink()"
           muted="muted"
           :src-object.prop.camel="userCamStream"
         ></video>
@@ -113,6 +132,18 @@
             :disabled="!userConnected"
             solo
           ></v-text-field>
+        </div>
+        <div>
+          <v-expansion-panels>
+            <v-expansion-panel>
+              <v-expansion-panel-header
+                >Community Rules</v-expansion-panel-header
+              >
+              <v-expansion-panel-content>
+                <RuleList />
+              </v-expansion-panel-content>
+            </v-expansion-panel>
+          </v-expansion-panels>
         </div>
       </v-col>
     </v-row>
@@ -209,6 +240,8 @@ import io from "socket.io-client";
 import Peer from "simple-peer";
 import Autolinker from "autolinker";
 
+import RuleList from "./RuleList";
+
 const appStates = {
   WS_CONNECTING: 1,
   STARTING: 2,
@@ -225,6 +258,8 @@ const appStates = {
 
 export default {
   name: "Chat",
+
+  components: { RuleList },
 
   data() {
     return {
@@ -713,10 +748,12 @@ video {
   -webkit-transform: scaleX(-1);
   transform: scaleX(-1);
 }
+
 #chatbox {
   overflow-y: auto;
   max-height: 30vh;
 }
+
 .dot-green {
   height: 10px;
   width: 10px;

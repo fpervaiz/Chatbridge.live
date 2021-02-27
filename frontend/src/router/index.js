@@ -4,6 +4,7 @@ import Router from 'vue-router'
 const HomePage = () => import('./../components/HomePage.vue')
 const About = () => import('./../components/About.vue')
 const LoginRaven = () => import('./../components/LoginRaven.vue')
+const Rules = () => import('./../components/Rules.vue')
 // const Login = () => import('./../components/Login.vue')
 // const Register = () => import('./../components/Register.vue')
 // const ResetPassword = () => import('./../components/ResetPassword.vue')
@@ -17,9 +18,10 @@ const routes = [
     { path: '/', component: HomePage },
     { path: '/about', component: About },
     { path: '/raven', component: LoginRaven },
+    { path: '/rules', component: Rules },
     // { path: '/login', component: Login },
     // { path: '/register', component: Register },
-    // { path: '/resetPassword', component: ResetPassword },
+    // { path: '/resetPassword', component: ResetPassword },    
     { path: '/chat', component: Chat, meta: { requiresAuth: true } },
     { path: '*', component: HomePage },
 ]
