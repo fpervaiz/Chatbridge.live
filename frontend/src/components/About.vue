@@ -351,7 +351,9 @@
     <p></p>
     <p>
       Your information and unique identifiers are never shared with, nor
-      transmitted to, any users of the site.
+      transmitted to, any users of the site. The sole exception is where your
+      identity is requested in response to serious misconduct (a serious
+      violation of the Community Rules) by you.
     </p>
 
     <h3>Cookies</h3>
