@@ -14,7 +14,7 @@
       </router-link></v-app-bar-title
     >
     <v-layout align-center justify-end>
-      <v-menu v-if="userLoggedIn" v-model="menu" offset-y>
+      <v-menu v-if="userLoggedIn" offset-y>
         <template v-slot:activator="{ on, attrs }">
           <v-btn v-bind="attrs" v-on="on" icon>
             <v-icon>mdi-account</v-icon>
