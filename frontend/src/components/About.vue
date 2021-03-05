@@ -233,6 +233,12 @@
     <h3>4. Limitations</h3>
 
     <p>
+      Chatbridge assumes no responsibility for the actions, behaviour, views and
+      opinions of any users on the website. All actions, behaviours, views and
+      opinions of a user are entirely their own.
+    </p>
+
+    <p>
       Chatbridge or its suppliers will not be hold accountable for any damages
       that will arise with the use or inability to use the materials on
       Chatbridge’s Website, even if Chatbridge or an authorize representative of
