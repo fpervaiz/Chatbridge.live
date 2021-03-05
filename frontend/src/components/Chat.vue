@@ -408,7 +408,7 @@ export default {
           return "You left the chat.";
         }
         case appStates.DISCONNECTED_ERROR: {
-          return "Connection failed. Please try again.";
+          return "Connection failed. Sorry about that.";
         }
         default: {
           return null;
@@ -630,14 +630,11 @@ export default {
             },
           });
 
-          setTimeout((initialPeerId) => {
-            if (
-              this.appState === appStates.CONNECTING &&
-              this.peerId === initialPeerId
-            ) {
+          self.peerConnectTimeout = setTimeout(() => {
+            if (this.appState !== appStates.CONNECTED) {
               this.handlePeerError();
             }
-          }, 20000);
+          }, 15000);
 
           self.localPeer.on("signal", (signalData) => {
             self.matchingSocket.emit("signal", {
@@ -646,6 +643,7 @@ export default {
           });
 
           self.localPeer.on("connect", () => {
+            clearTimeout(this.peerConnectTimeout);
             this.appState = appStates.CONNECTED;
             this.addChatMessage({
               sender: "_STATUS_GREEN",
