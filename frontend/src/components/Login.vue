@@ -83,6 +83,7 @@ export default {
           })
           .then((response) => {
             this.message = response;
+            this.$analytics.logEvent("login");
             this.$router.replace("chat");
           })
           .catch((error) => {

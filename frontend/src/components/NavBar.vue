@@ -1,5 +1,5 @@
 <template>
-  <v-app-bar height="84" flat app>
+  <v-app-bar height="84" :extension-height="extensionHeight" flat app>
     <v-spacer></v-spacer>
     <v-img
       class="mx-1 mb-3"
@@ -14,7 +14,7 @@
       </router-link></v-app-bar-title
     >
     <v-layout align-center justify-end>
-      <v-menu v-if="userLoggedIn" v-model="menu" offset-y>
+      <v-menu v-if="userLoggedIn" offset-y>
         <template v-slot:activator="{ on, attrs }">
           <v-btn v-bind="attrs" v-on="on" icon>
             <v-icon>mdi-account</v-icon>
@@ -46,12 +46,60 @@
         </v-card>
       </v-menu>
     </v-layout>
+
+    <template v-if="eventBanner" v-slot:extension>
+      <div class="text-center">
+        <a
+          class="event-link font-weight-bold"
+          target="_blank"
+          :href="eventBanner.link"
+          >{{ eventBanner.name }}</a
+        >
+        -
+        <vue-countdown
+          :time="new Date(eventBanner.start_time) - Date.now()"
+          v-slot="{ days, hours, minutes, seconds }"
+          :emit-events="false"
+        >
+          starts in {{ days }} days, {{ hours }} hours, {{ minutes }} minutes,
+          {{ seconds }} seconds
+        </vue-countdown>
+      </div>
+    </template>
   </v-app-bar>
 </template>
 
 <script>
+import firebase from "firebase";
+import "firebase/remote-config";
+import VueCountdown from "@chenfengyuan/vue-countdown";
+
 export default {
   name: "NavBar",
+
+  components: { VueCountdown },
+
+  data() {
+    return {
+      remoteConfig: null,
+      eventBanner: null,
+    };
+  },
+
+  created() {
+    this.remoteConfig = firebase.remoteConfig();
+    this.remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
+
+    this.remoteConfig
+      .fetchAndActivate()
+      .then(() => {
+        let eventBannerJson = this.remoteConfig.getValue("event_banner")._value;
+        if (eventBannerJson) {
+          this.eventBanner = JSON.parse(eventBannerJson);
+        }
+      })
+      .catch((err) => console.log(err));
+  },
 
   computed: {
     userLoggedIn() {
@@ -69,11 +117,20 @@ export default {
     userUniversity() {
       return this.$store.getters.university;
     },
+    extensionHeight() {
+      switch (this.$vuetify.breakpoint.name) {
+        case "xs":
+          return 48;
+        default:
+          return 24;
+      }
+    },
   },
 
   methods: {
     logout() {
       this.$store.dispatch("logoutUserAction").then(() => {
+        this.$analytics.logEvent("logout");
         this.$router.replace("/");
       });
     },
@@ -86,6 +143,13 @@ export default {
   font-family: "a Affirmation";
   font-size: 56px;
   text-decoration: none;
+  color: white;
+}
+/deep/ div.v-toolbar__extension {
+  background-color: crimson;
+  justify-content: center;
+}
+.event-link {
   color: white;
 }
 </style>

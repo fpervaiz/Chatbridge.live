@@ -19,7 +19,10 @@
 
       <li>
         <h4>NSFW behaviour and content is strictly prohibited.</h4>
-        <p class="text--secondary">Keep it clean.</p>
+        <p class="text--secondary">
+          This includes any form of sexual harrasment or misconduct. Keep it
+          clean.
+        </p>
       </li>
 
       <li>

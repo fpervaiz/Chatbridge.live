@@ -20,6 +20,7 @@
           <p>{{ peerStatusMessage }}</p>
         </div>
         <video
+          class="camVideo"
           v-if="peerCamStream"
           :width="peerWidth"
           height="auto"
@@ -48,6 +49,7 @@
           <p>Connect a webcam or allow access.</p>
         </div>
         <video
+          class="camVideo"
           v-if="userCamStream"
           :width="userWidth"
           height="auto"
@@ -406,7 +408,7 @@ export default {
           return "You left the chat.";
         }
         case appStates.DISCONNECTED_ERROR: {
-          return "Connection failed. Please try again.";
+          return "Connection failed. Sorry about that.";
         }
         default: {
           return null;
@@ -434,6 +436,7 @@ export default {
         this.peerId = null;
 
         this.matchingSocket.emit("search");
+        this.$analytics.logEvent("chat_app_search");
         this.appState = appStates.SEARCHING;
       }
     },
@@ -482,6 +485,7 @@ export default {
             switch (response.status) {
               case "ok": {
                 this.$refs.blockReportForm.reset();
+                this.$analytics.logEvent("chat_app_block_report_success");
                 this.addChatMessage({
                   sender: "_STATUS_GREEN",
                   text:
@@ -490,6 +494,7 @@ export default {
                 break;
               }
               case "error": {
+                this.$analytics.logEvent("chat_app_block_report_fail");
                 this.addChatMessage({
                   sender: "_STATUS_RED",
                   text: "Failed to block/report. Please try again.",
@@ -513,6 +518,8 @@ export default {
     },
 
     closePeerConnection(isInitiator) {
+      this.$analytics.logEvent("chat_app_peer_close");
+
       if (isInitiator) {
         this.matchingSocket.emit("disconnect_peer");
       }
@@ -571,155 +578,166 @@ export default {
   mounted() {
     var self = this;
 
+    this.$analytics.logEvent("chat_app_start");
+
     this.chatBox = document.getElementById("chatbox");
 
-    self.$store.dispatch("getAuthIdTokenAction").then((idToken) => {
-      self.matchingSocket = io(process.env.VUE_APP_BACKEND_URL, {
-        transports: ["websocket"],
-        reconnectionAttempts: 5,
-        auth: {
-          idToken: idToken,
-        },
-      });
-
-      self.matchingSocket.on("connect", () => {
-        console.log("matching connected ", self.matchingSocket.id);
-        document.addEventListener("beforeunload", this.onHardClose);
-        self.appState = appStates.STARTING;
-        self.wsConnected = true;
-        self.wsConnectionError = "";
-
-        if (navigator.mediaDevices.getUserMedia) {
-          navigator.mediaDevices
-            .getUserMedia({
-              video: { facingMode: "user", width: 1280, height: 720 },
-              audio: true,
-            })
-            .then(function (stream) {
-              self.userCamStream = stream;
-              self.appState = appStates.READY;
-            })
-            .catch(function (error) {
-              console.log(error);
-              self.appState = appStates.ERROR;
-            });
-        }
-
-        self.matchingSocket.on("connect_peer", (data) => {
-          console.log("connecting to peer ", data.peerId);
-          self.appState = appStates.CONNECTING;
-          self.peerId = data.peerId;
-          self.localPeerFriendlyName = data.localFriendlyName;
-          self.remotePeerFriendlyName = data.peerFriendlyName;
-
-          self.localPeer = new Peer({
-            initiator: data.isInitiator,
-            stream: this.userCamStream,
-            config: {
-              iceServers: [
-                {
-                  urls: JSON.parse(process.env.VUE_APP_STUN_SERVERS),
-                },
-                {
-                  urls: process.env.VUE_APP_TURN_SERVER,
-                  username: data.turnCreds.username,
-                  credential: data.turnCreds.password,
-                },
-              ],
-              sdpSemantics: "unified-plan",
-            },
-          });
-
-          setTimeout((initialPeerId) => {
-            if (
-              this.appState === appStates.CONNECTING &&
-              this.peerId === initialPeerId
-            ) {
-              this.handlePeerError();
-            }
-          }, 20000);
-
-          self.localPeer.on("signal", (signalData) => {
-            self.matchingSocket.emit("signal", {
-              signalData: signalData,
-            });
-          });
-
-          self.localPeer.on("connect", () => {
-            this.appState = appStates.CONNECTED;
-            console.log("connected to remotePeer!");
-            this.addChatMessage({
-              sender: "_STATUS_GREEN",
-              text: "Connected to " + this.remotePeerFriendlyName,
-            });
-          });
-
-          self.localPeer.on("stream", (stream) => {
-            this.peerCamStream = stream;
-          });
-
-          self.localPeer.on("data", (data) => {
-            const msg = JSON.parse(data);
-            if (msg.type === "chatMessage") {
-              self.addChatMessage(msg.chatMessage);
-            }
-          });
-
-          self.localPeer.on("error", (err) => {
-            console.log(err);
-            self.handlePeerError();
-          });
+    self.$store
+      .dispatch("getAuthIdTokenAction")
+      .catch(() => {
+        self.$store.dispatch("logoutUserAction").then(() => {
+          this.$analytics.logEvent("logout");
+          this.$router.replace("/raven");
+        });
+      })
+      .then((idToken) => {
+        self.matchingSocket = io(process.env.VUE_APP_BACKEND_URL, {
+          transports: ["websocket"],
+          reconnectionAttempts: 5,
+          auth: {
+            idToken: idToken,
+          },
         });
 
-        self.matchingSocket.on("signal", (data) => {
-          self.localPeer.signal(data.signalData);
-        });
+        self.matchingSocket.on("connect", () => {
+          document.addEventListener("beforeunload", this.onHardClose);
+          self.appState = appStates.STARTING;
+          self.wsConnected = true;
+          self.wsConnectionError = "";
 
-        self.matchingSocket.on("disconnect_peer", () => {
-          this.closePeerConnection(false);
-        });
-
-        // Peer destroy and close event seem unreliable,
-        // so implement our own closing mechanism until the
-        // cause is found.
-        // self.localPeer.on("close", () => {
-        //   this.closePeerConnection();
-        // });
-      });
-
-      self.matchingSocket.on("queue_stats", (stats) => {
-        this.queueStats = stats;
-      });
-
-      self.matchingSocket.on("force_logout", () => {
-        this.$store.dispatch("logoutUserAction").then(() => {
-          this.$router.replace("/");
-        });
-      });
-
-      self.matchingSocket.on("connect_error", (error) => {
-        if (self.appState !== appStates.CONNECTED) {
-          self.appState = appStates.WS_ERROR;
-        }
-        self.wsConnected = false;
-        switch (error.message) {
-          case "unauthorised": {
-            this.wsConnectionError =
-              "Authentication error. Please try again later.";
-            break;
+          if (navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices
+              .getUserMedia({
+                video: { facingMode: "user", width: 1280, height: 720 },
+                audio: true,
+              })
+              .then(function (stream) {
+                self.userCamStream = stream;
+                self.$analytics.logEvent("chat_app_ready");
+                self.appState = appStates.READY;
+              })
+              .catch(function (error) {
+                console.log(error);
+                self.appState = appStates.ERROR;
+              });
           }
-          case "already_connected": {
-            this.wsConnectionError =
-              "You have Chatbridge open in another tab. Please close it and try again.";
-            break;
+
+          self.matchingSocket.on("connect_peer", (data) => {
+            self.$analytics.logEvent("chat_app_peer_match");
+            self.appState = appStates.CONNECTING;
+            self.peerId = data.peerId;
+            self.localPeerFriendlyName = data.localFriendlyName;
+            self.remotePeerFriendlyName = data.peerFriendlyName;
+
+            self.localPeer = new Peer({
+              initiator: data.isInitiator,
+              stream: this.userCamStream,
+              config: {
+                iceServers: [
+                  {
+                    urls: JSON.parse(process.env.VUE_APP_STUN_SERVERS),
+                  },
+                  {
+                    urls: process.env.VUE_APP_TURN_SERVER,
+                    username: data.turnCreds.username,
+                    credential: data.turnCreds.password,
+                  },
+                ],
+                sdpSemantics: "unified-plan",
+              },
+            });
+
+            self.peerConnectTimeout = setTimeout(() => {
+              if (this.appState !== appStates.CONNECTED) {
+                this.handlePeerError();
+              }
+            }, 15000);
+
+            self.localPeer.on("signal", (signalData) => {
+              self.matchingSocket.emit("signal", {
+                signalData: signalData,
+              });
+            });
+
+            self.localPeer.on("connect", () => {
+              clearTimeout(this.peerConnectTimeout);
+              this.$analytics.logEvent("chat_app_peer_connected");
+              this.appState = appStates.CONNECTED;
+              this.addChatMessage({
+                sender: "_STATUS_GREEN",
+                text: "Connected to " + this.remotePeerFriendlyName,
+              });
+            });
+
+            self.localPeer.on("stream", (stream) => {
+              this.peerCamStream = stream;
+            });
+
+            self.localPeer.on("data", (data) => {
+              const msg = JSON.parse(data);
+              if (msg.type === "chatMessage") {
+                self.addChatMessage(msg.chatMessage);
+              }
+            });
+
+            self.localPeer.on("error", (err) => {
+              self.$analytics.logEvent("chat_app_peer_error");
+              console.log(err);
+              self.handlePeerError();
+            });
+          });
+
+          self.matchingSocket.on("signal", (data) => {
+            self.localPeer.signal(data.signalData);
+          });
+
+          self.matchingSocket.on("disconnect_peer", () => {
+            this.closePeerConnection(false);
+          });
+
+          // Peer destroy and close event seem unreliable,
+          // so implement our own closing mechanism until the
+          // cause is found.
+          // self.localPeer.on("close", () => {
+          //   this.closePeerConnection();
+          // });
+        });
+
+        self.matchingSocket.on("queue_stats", (stats) => {
+          this.queueStats = stats;
+        });
+
+        self.matchingSocket.on("force_logout", () => {
+          this.$store.dispatch("logoutUserAction").then(() => {
+            this.$analytics.logEvent("logout");
+            this.$router.replace("/");
+          });
+        });
+
+        self.matchingSocket.on("connect_error", (error) => {
+          self.$analytics.logEvent("chat_app_ws_error");
+          if (self.appState !== appStates.CONNECTED) {
+            self.appState = appStates.WS_ERROR;
           }
-          default:
-            this.wsConnectionError =
-              "Looks like our matchmaking genie has gone missing. Please try again later.";
-        }
-        this.matchingSocket.removeAllListeners();
+          self.wsConnected = false;
+          switch (error.message) {
+            case "unauthorised": {
+              this.wsConnectionError =
+                "Authentication error. Please try again later.";
+              break;
+            }
+            case "already_connected": {
+              this.wsConnectionError =
+                "You have Chatbridge open in another tab. Please close it and try again.";
+              break;
+            }
+            default:
+              this.wsConnectionError =
+                "Looks like our matchmaking genie has gone missing. Please try again later.";
+          }
+          this.matchingSocket.removeAllListeners();
+        });
       });
-    });
   },
 
   beforeDestroy() {
@@ -735,18 +753,22 @@ export default {
       this.matchingSocket.disconnect();
       this.matchingSocket.removeAllListeners();
       this.wsConnected = false;
-      console.log("Disconnected matching");
     }
 
     document.removeEventListener("beforeunload", this.onHardClose);
+    this.$analytics.logEvent("chat_app_exited");
   },
 };
 </script>
 
 <style scoped>
-video {
+.camVideo {
   -webkit-transform: scaleX(-1);
   transform: scaleX(-1);
+  -webkit-transition: width 300ms ease-in-out, height 300ms ease-in-out;
+  -moz-transition: width 300ms ease-in-out, height 300ms ease-in-out;
+  -o-transition: width 300ms ease-in-out, height 300ms ease-in-out;
+  transition: width 300ms ease-in-out, height 300ms ease-in-out;
 }
 
 #chatbox {
