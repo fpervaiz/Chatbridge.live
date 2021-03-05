@@ -183,10 +183,9 @@ const actions = {
 
     getAuthIdTokenAction() {
         return new Promise((resolve, reject) => {
-            firebase.auth().currentUser.getIdToken().then((idToken) => {
+            firebase.auth().currentUser.getIdToken(true).then((idToken) => {
                 resolve(idToken);
-            }).catch((error) => {
-                console.log(error);
+            }).catch(() => {
                 reject();
             })
         })
