@@ -20,6 +20,7 @@
           <p>{{ peerStatusMessage }}</p>
         </div>
         <video
+          class="camVideo"
           v-if="peerCamStream"
           :width="peerWidth"
           height="auto"
@@ -48,6 +49,7 @@
           <p>Connect a webcam or allow access.</p>
         </div>
         <video
+          class="camVideo"
           v-if="userCamStream"
           :width="userWidth"
           height="auto"
@@ -744,9 +746,13 @@ export default {
 </script>
 
 <style scoped>
-video {
+.camVideo {
   -webkit-transform: scaleX(-1);
   transform: scaleX(-1);
+  -webkit-transition: width 300ms ease-in-out, height 300ms ease-in-out;
+  -moz-transition: width 300ms ease-in-out, height 300ms ease-in-out;
+  -o-transition: width 300ms ease-in-out, height 300ms ease-in-out;
+  transition: width 300ms ease-in-out, height 300ms ease-in-out;
 }
 
 #chatbox {
