@@ -585,7 +585,6 @@ export default {
       });
 
       self.matchingSocket.on("connect", () => {
-        console.log("matching connected ", self.matchingSocket.id);
         document.addEventListener("beforeunload", this.onHardClose);
         self.appState = appStates.STARTING;
         self.wsConnected = true;
@@ -608,7 +607,6 @@ export default {
         }
 
         self.matchingSocket.on("connect_peer", (data) => {
-          console.log("connecting to peer ", data.peerId);
           self.appState = appStates.CONNECTING;
           self.peerId = data.peerId;
           self.localPeerFriendlyName = data.localFriendlyName;
@@ -649,7 +647,6 @@ export default {
 
           self.localPeer.on("connect", () => {
             this.appState = appStates.CONNECTED;
-            console.log("connected to remotePeer!");
             this.addChatMessage({
               sender: "_STATUS_GREEN",
               text: "Connected to " + this.remotePeerFriendlyName,
@@ -737,7 +734,6 @@ export default {
       this.matchingSocket.disconnect();
       this.matchingSocket.removeAllListeners();
       this.wsConnected = false;
-      console.log("Disconnected matching");
     }
 
     document.removeEventListener("beforeunload", this.onHardClose);
