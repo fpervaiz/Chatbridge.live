@@ -130,6 +130,7 @@ export default {
   methods: {
     logout() {
       this.$store.dispatch("logoutUserAction").then(() => {
+        this.$analytics.logEvent("logout");
         this.$router.replace("/");
       });
     },

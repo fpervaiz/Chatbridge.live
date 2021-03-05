@@ -7,6 +7,7 @@ import store from './store'
 
 import firebase from "firebase/app"
 import "firebase/auth"
+import "firebase/analytics"
 
 var firebaseConfig = {
   apiKey: process.env.VUE_APP_FIREBASE_API_KEY,
@@ -22,6 +23,7 @@ firebase.initializeApp(firebaseConfig);
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
 
 Vue.config.productionTip = false
+Vue.prototype.$analytics = firebase.analytics()
 
 store.dispatch("checkAuthAction").then(() => {
   new Vue({

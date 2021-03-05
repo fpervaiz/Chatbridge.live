@@ -436,6 +436,7 @@ export default {
         this.peerId = null;
 
         this.matchingSocket.emit("search");
+        this.$analytics.logEvent("chat_app_search");
         this.appState = appStates.SEARCHING;
       }
     },
@@ -484,6 +485,7 @@ export default {
             switch (response.status) {
               case "ok": {
                 this.$refs.blockReportForm.reset();
+                this.$analytics.logEvent("chat_app_block_report_success");
                 this.addChatMessage({
                   sender: "_STATUS_GREEN",
                   text:
@@ -492,6 +494,7 @@ export default {
                 break;
               }
               case "error": {
+                this.$analytics.logEvent("chat_app_block_report_fail");
                 this.addChatMessage({
                   sender: "_STATUS_RED",
                   text: "Failed to block/report. Please try again.",
@@ -515,6 +518,8 @@ export default {
     },
 
     closePeerConnection(isInitiator) {
+      this.$analytics.logEvent("chat_app_peer_close");
+
       if (isInitiator) {
         this.matchingSocket.emit("disconnect_peer");
       }
@@ -573,14 +578,17 @@ export default {
   mounted() {
     var self = this;
 
+    this.$analytics.logEvent("chat_app_start");
+
     this.chatBox = document.getElementById("chatbox");
 
     self.$store
       .dispatch("getAuthIdTokenAction")
       .catch(() => {
-        self.$store
-          .dispatch("logoutUserAction")
-          .then(() => this.$router.replace("/raven"));
+        self.$store.dispatch("logoutUserAction").then(() => {
+          this.$analytics.logEvent("logout");
+          this.$router.replace("/raven");
+        });
       })
       .then((idToken) => {
         self.matchingSocket = io(process.env.VUE_APP_BACKEND_URL, {
@@ -605,6 +613,7 @@ export default {
               })
               .then(function (stream) {
                 self.userCamStream = stream;
+                self.$analytics.logEvent("chat_app_ready");
                 self.appState = appStates.READY;
               })
               .catch(function (error) {
@@ -614,6 +623,7 @@ export default {
           }
 
           self.matchingSocket.on("connect_peer", (data) => {
+            self.$analytics.logEvent("chat_app_peer_match");
             self.appState = appStates.CONNECTING;
             self.peerId = data.peerId;
             self.localPeerFriendlyName = data.localFriendlyName;
@@ -651,6 +661,7 @@ export default {
 
             self.localPeer.on("connect", () => {
               clearTimeout(this.peerConnectTimeout);
+              this.$analytics.logEvent("chat_app_peer_connected");
               this.appState = appStates.CONNECTED;
               this.addChatMessage({
                 sender: "_STATUS_GREEN",
@@ -670,6 +681,7 @@ export default {
             });
 
             self.localPeer.on("error", (err) => {
+              self.$analytics.logEvent("chat_app_peer_error");
               console.log(err);
               self.handlePeerError();
             });
@@ -697,11 +709,13 @@ export default {
 
         self.matchingSocket.on("force_logout", () => {
           this.$store.dispatch("logoutUserAction").then(() => {
+            this.$analytics.logEvent("logout");
             this.$router.replace("/");
           });
         });
 
         self.matchingSocket.on("connect_error", (error) => {
+          self.$analytics.logEvent("chat_app_ws_error");
           if (self.appState !== appStates.CONNECTED) {
             self.appState = appStates.WS_ERROR;
           }
@@ -742,6 +756,7 @@ export default {
     }
 
     document.removeEventListener("beforeunload", this.onHardClose);
+    this.$analytics.logEvent("chat_app_exited");
   },
 };
 </script>
