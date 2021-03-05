@@ -167,7 +167,10 @@ io.on('connection', function (socket) {
                 match.peerUid = socket.uid
 
                 socket.friendlyName = initiatorFriendlyName
+                socket.peerFriendlyName = receiverFriendlyName
+
                 match.friendlyName = receiverFriendlyName
+                match.peerFriendlyName = initiatorFriendlyName
 
                 socket.roomId = newRoomId
                 match.roomId = newRoomId
@@ -206,7 +209,10 @@ io.on('connection', function (socket) {
 
     socket.on('block_report', (data, callback) => {
         const fromUid = socket.uid
+        const fromName = socket.friendlyName
+
         const toUid = socket.peerUid
+        const toName = socket.peerFriendlyName
 
         const dateInt = Date.now()
         const dateObj = admin.firestore.Timestamp.fromDate(new Date())
@@ -239,7 +245,9 @@ io.on('connection', function (socket) {
 
             const report = {
                 reported: toUid,
+                reportedName: toName,
                 from: fromUid,
+                fromName: fromName,
                 time: dateObj,
                 reason: data.formData.reportReason
             }
