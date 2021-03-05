@@ -5,7 +5,9 @@
         <h2 class="my-3">Community Rules</h2>
         <p>
           Here's a quick reminder of our rules for using Chatbridge. Please
-          report anyone you find violating these rules.
+          report anyone you find violating these rules. If you have screenshots
+          or other evidence of rule-breaking, please send these to us at
+          <a href="mailto:admin@chatbridge.live">admin@chatbridge.live</a>.
         </p>
         <RuleList />
         <div class="my-2 text-center">

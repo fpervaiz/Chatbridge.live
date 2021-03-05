@@ -42,7 +42,9 @@
       anyone breaking the
       <router-link to="/rules">Community Rules</router-link>, please report them
       as well. This will help us keep bad users off the website. You can still
-      block or report a user even if the chat has ended.
+      block or report a user even if the chat has ended. If you have any
+      screenshots or any other evidence of rule-breaking, please send them to
+      <a href="mailto:admin@chatbridge.live">admin@chatbridge.live</a>.
     </p>
     <h3>Is it secure?</h3>
     <p>
@@ -222,6 +224,21 @@
     <h3>3. Disclaimer</h3>
 
     <p>
+      Understand and accept that human behaviour is fundamentally
+      uncontrollable, that the people you encounter on Chatbridge may not behave
+      appropriately, and that they are solely responsible for their own
+      behaviour, actions, views and opinions. Use Chatbridge at your own peril.
+      Disconnect immediately if anyone makes you feel uncomfortable and make use
+      of the report function as appropriate. Please note that you may report
+      anyone and/or be reported for inappropriate behaviour, misconduct, or for
+      any other reason; and that a copy of a report (if one has been made
+      against you) and any evidence submitted to us (such as screenshots) may be
+      sent to - including but not limited to - the reporter, the University, and
+      authorities. You may be denied access to Chatbridge for inappropriate
+      behaviour, or for any other reason.
+    </p>
+
+    <p>
       All the materials on Chatbridge’s Website are provided "as is". Chatbridge
       makes no warranties, may it be expressed or implied, therefore negates all
       other warranties. Furthermore, Chatbridge does not make any
@@ -233,19 +250,14 @@
     <h3>4. Limitations</h3>
 
     <p>
-      Chatbridge assumes no responsibility for the actions, behaviour, views and
-      opinions of any users on the website. All actions, behaviours, views and
-      opinions of a user are entirely their own.
-    </p>
-
-    <p>
-      Chatbridge or its suppliers will not be hold accountable for any damages
-      that will arise with the use or inability to use the materials on
-      Chatbridge’s Website, even if Chatbridge or an authorize representative of
-      this Website has been notified, orally or written, of the possibility of
-      such damage. Some jurisdiction does not allow limitations on implied
-      warranties or limitations of liability for incidental damages, these
-      limitations may not apply to you.
+      Chatbridge is provided as is, and to the maximum extent allowed by
+      applicable law, it is provided without any warranty, express or implied,
+      not even a warranty of merchantability or fitness for a particular
+      purpose. To the maximum extent allowed by applicable law, the provider of
+      Chatbridge, and any other person or entity associated with Chatbridge's
+      operation, shall not be held liable for any direct or indirect damages
+      arising from the use of Chatbridge, or any other damages related to
+      Chatbridge of any kind whatsoever.
     </p>
 
     <h3>5. Revisions and Errata</h3>
@@ -329,6 +341,10 @@
       all other features and operation of the website.
     </p>
     <p>
+      Fully anonymous usage and analytics data is collected to help us improve
+      the performance of the website and find bugs and issues.
+    </p>
+    <p>
       If you contact us directly, we may receive additional information about
       you such as your name, email address, phone number, the contents of the
       message and/or attachments you may send us, and any other information you
@@ -347,13 +363,15 @@
       <li>Enforcing your list of blocked users</li>
       <li>Taking action in response to user reports you have submitted</li>
       <li>Contacting you only regarding updates to your account</li>
+      <li>Improving the service and fixing bugs and errors</li>
     </ul>
     <p></p>
     <p>
       Your information and unique identifiers are never shared with, nor
       transmitted to, any users of the site. The sole exception is where your
-      identity is requested in response to serious misconduct (a serious
-      violation of the Community Rules) by you.
+      identity is requested by - including but not limited to - the reporter,
+      the University, or authorities, in response to serious misconduct (a
+      serious violation of the Community Rules) by you.
     </p>
 
     <h3>Cookies</h3>
