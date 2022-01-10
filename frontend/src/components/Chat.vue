@@ -66,11 +66,11 @@
           <p v-if="queueStats">
             <span class="dot-green mr-2"></span>
             <span class="font-weight-bold"
-              >{{ queueStats.waiting + queueStats.chatting }} online now
+              >{{ queueStats.online }} online now
             </span>
             <span class="font-weight-regular text--secondary"
               >({{ queueStats.chatting }} chatting,
-              {{ queueStats.waiting }} waiting)</span
+              {{ queueStats.searching }} searching)</span
             >
           </p>
           <v-skeleton-loader v-else type="text"></v-skeleton-loader>
@@ -773,12 +773,15 @@ export default {
 
 <style scoped>
 .camVideo {
-  -webkit-transform: scaleX(-1);
-  transform: scaleX(-1);
   -webkit-transition: width 300ms ease-in-out, height 300ms ease-in-out;
   -moz-transition: width 300ms ease-in-out, height 300ms ease-in-out;
   -o-transition: width 300ms ease-in-out, height 300ms ease-in-out;
   transition: width 300ms ease-in-out, height 300ms ease-in-out;
+}
+
+#userCam {
+  -webkit-transform: scaleX(-1);
+  transform: scaleX(-1);
 }
 
 #chatbox {
