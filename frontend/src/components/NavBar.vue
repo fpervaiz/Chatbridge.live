@@ -88,7 +88,7 @@ export default {
 
   created() {
     this.remoteConfig = firebase.remoteConfig();
-    this.remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
+    this.remoteConfig.settings.minimumFetchIntervalMillis = 600000;
 
     this.remoteConfig
       .fetchAndActivate()
