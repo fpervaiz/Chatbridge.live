@@ -73,10 +73,37 @@
 </template>
 
 <script>
+import firebase from "firebase/app";
+import "firebase/remote-config";
 import VueRecaptcha from "vue-recaptcha";
 
 export default {
   name: "RegisterForm",
+
+  created() {
+    this.remoteConfig = firebase.remoteConfig();
+    this.remoteConfig.settings.minimumFetchIntervalMillis = 600000;
+
+    this.remoteConfig
+      .fetchAndActivate()
+      .then(() => {
+        let config = this.remoteConfig
+          .getValue("allow_register_domains")
+          .asString();
+        if (config) {
+          let allowRegisterDomains = JSON.parse(config);
+          // eslint-disable-next-line
+          let exp = `^(([^<>()[\\]\\.,;:\s@']+(\.[^<>()\\[\]\\.,;:\s@']+)*)|('.+'))@(${allowRegisterDomains.join(
+            "|"
+          )})$`;
+          console.log(new RegExp(exp));
+          this.emailRules.push(
+            (v) => new RegExp(exp).test(v) || "Invalid email address"
+          );
+        }
+      })
+      .catch((err) => console.log(err));
+  },
 
   components: { VueRecaptcha },
 
@@ -88,6 +115,8 @@ export default {
   },
 
   data: () => ({
+    remoteConfig: null,
+
     recaptchaKey: "6Lcg3TMaAAAAACxa6pIya8mZ4SLJ8bpGN-OxBXFM",
     recaptchaVerified: false,
     recaptchaToken: "",
@@ -106,13 +135,7 @@ export default {
       (v) => !!v || "Name is required",
       (v) => (v && v.length <= 10) || "Name must be less than 10 characters",
     ],
-    emailRules: [
-      (v) => !!v || "Email address is required",
-      (v) =>
-        /^(([^<>()[\]\\.,;:\s@']+(\.[^<>()\\[\]\\.,;:\s@']+)*)|('.+'))@cam.ac.uk$/.test(
-          v
-        ) || "Invalid email address",
-    ],
+    emailRules: [(v) => !!v || "Email address is required"],
     /*
     passwordRules: [
       (v) => !!v || "Password is required",
