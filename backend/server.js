@@ -1,17 +1,24 @@
 require('dotenv').config()
 
 const CORS_ORIGIN = process.env.CORS_ORIGIN ? new Set(JSON.parse(process.env.CORS_ORIGIN)) : new Set(['http://localhost:8080'])
+const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET || ""
 const PORT = process.env.PORT || 3000
 const TURN_SECRET = process.env.TURN_SECRET
 const SERVICE_ACCOUNT = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from(process.env.FIREBASE_CONFIG_B64, 'base64').toString('ascii')) : require('./firebaseSA.credential.json')
 const ALLOWED_UNIVERSITIES = process.env.ALLOWED_UNIVERSITIES ? new Set(JSON.parse(process.env.ALLOWED_UNIVERSITIES)) : new Set(['cam.ac.uk', 'gmail.com'])
+const ALLOWED_REGISTER_UNIVERSITIES = process.env.ALLOWED_REGISTER_UNIVERSITIES ? new Set(JSON.parse(process.env.ALLOWED_REGISTER_UNIVERSITIES)) : new Set(['cam.ac.uk', 'gmail.com'])
 
 const admin = require('firebase-admin')
 const { v4: uuidv4 } = require('uuid')
 const generateName = require('sillyname')
 const crypto = require('crypto');
+const axios = require('axios');
 
-const app = require('express')()
+const express = require('express');
+const cors = require('cors');
+
+const app = express();
+const bodyParser = require('body-parser');
 const http = require('http').Server(app)
 const io = require('socket.io')(http, {
     cors: {
@@ -51,6 +58,54 @@ for (let university of ALLOWED_UNIVERSITIES) {
         chatting: 0
     }
 }
+
+app.use(cors({ origin: CORS_ORIGIN }))
+app.use(bodyParser.json());
+
+app.post('/api/register', (req, res) => {
+    const email = req.body.email;
+    const password = req.body.password;
+    const recaptchaToken = req.body.recaptchaToken;
+
+    axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET}&response=${recaptchaToken}`)
+        .catch((error) => {
+            console.log("UNKNOWN ERROR (recaptchaVerify): ", error);
+            return res.status(500).json({ error: "internal", message: "Unknown error. Please try again later." });
+        })
+        .then((response) => {
+            if (response.data.success) {
+                let university = email.split("@").pop();
+                if (ALLOWED_REGISTER_UNIVERSITIES.has(university)) {
+                    admin.auth().createUser({
+                        email: email,
+                        password: password,
+                        emailVerified: false,
+                        displayName: email,
+                        disabled: false,
+                    })
+                        .then((userRecord) => {
+                            console.log("Successfully created new user: ", userRecord.email, userRecord.uid);
+                            return res.json({
+                                email: userRecord.email,
+                                uid: userRecord.uid,
+                            });
+                        })
+                        .catch((error) => {
+                            if (error.code === "auth/email-already-exists") {
+                                return res.status(400).json({ error: "account-already-exists", message: "You already have an account here. Try logging in instead." });
+                            } else {
+                                console.log("UNKNOWN ERROR (createUser): ", error);
+                                return res.status(500).json({ error: "internal", message: "Unexpected error. Please try again later." });
+                            }
+                        });
+                } else {
+                    return res.status(400).json({ error: "email-not-supported", message: "Your email address is not supported." });
+                }
+            } else {
+                return res.status(400).json({ error: "bad-recaptcha", message: "reCaptcha verification failed. Please try again." });
+            }
+        });
+})
 
 app.get('/*', (req, res) => {
     res.redirect('https://chatbridge.live')
