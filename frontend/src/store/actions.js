@@ -4,40 +4,40 @@ import 'firebase/auth';
 const actions = {
     registerUserAction({ commit }, payload) {
         return new Promise((resolve, reject) => {
-            let registerUser = firebase.functions().httpsCallable("registerUser");
-            registerUser({
-                email: payload.email,
-                password: payload.password,
-                recaptchaToken: payload.recaptchaToken
-            })
-                .then(() => {
-                    firebase
-                        .auth()
-                        .signInWithEmailAndPassword(payload.email, payload.password)
-                        .then((user) => {
-                            user.user.sendEmailVerification().then(() => {
-                                firebase
-                                    .auth()
-                                    .signOut()
-                                    .then(() => {
-                                        let message = {
-                                            type: "success",
-                                            text: "Please check your email to verify your address."
-                                        }
-                                        commit("setMessage", message)
-                                        resolve(message);
-                                    });
-                            });
+            return fetch(process.env.VUE_APP_BACKEND_URL + '/api/register', {
+                method: 'POST',
+                headers: {
+                    'Content-type': 'application/json'
+                },
+                body: JSON.stringify({ email: payload.email, password: payload.password, recaptchaToken: payload.recaptchaToken })
+            }).then((response) => {
+                console.log(response);
+                firebase
+                    .auth()
+                    .signInWithEmailAndPassword(payload.email, payload.password)
+                    .then((user) => {
+                        user.user.sendEmailVerification().then(() => {
+                            firebase
+                                .auth()
+                                .signOut()
+                                .then(() => {
+                                    let message = {
+                                        type: "success",
+                                        text: "Please check your email to verify your address."
+                                    }
+                                    commit("setMessage", message)
+                                    resolve(message);
+                                });
                         });
-                })
-                .catch((error) => {
-                    let message = {
-                        type: "error",
-                        text: error,
-                    }
-                    commit("setMessage", message);
-                    reject(message);
-                });
+                    });
+            }).catch((error) => {
+                let message = {
+                    type: "error",
+                    text: error,
+                }
+                commit("setMessage", message);
+                reject(message);
+            });
         })
     },
 
