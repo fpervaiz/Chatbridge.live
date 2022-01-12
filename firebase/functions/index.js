@@ -4,52 +4,52 @@ const axios = require("axios");
 
 admin.initializeApp();
 
-exports.registerUser = functions.region("europe-west2").https.onCall((data, context) => {
-  const email = data.email;
-  const password = data.password;
-  const recaptchaToken = data.recaptchaToken;
+// exports.registerUser = functions.region("europe-west2").https.onCall((data, context) => {
+//   const email = data.email;
+//   const password = data.password;
+//   const recaptchaToken = data.recaptchaToken;
 
-  const ALLOWED_REGISTER_UNIVERSITIES = new Set(JSON.parse(functions.config().chatbridge.allowedRegisterUniversities));
+//   const ALLOWED_REGISTER_UNIVERSITIES = new Set(JSON.parse(functions.config().chatbridge.allowedRegisterUniversities));
 
-  return axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${recaptchaToken}`)
-    .catch((error) => {
-      console.log("UNKNOWN ERROR (recaptchaVerify): ", error);
-      throw new functions.https.HttpsError("internal", "Unknown error. Please try again later.");
-    })
-    .then((response) => {
-      if (response.data.success) {
-        let university = email.split("@").pop();
-        if (ALLOWED_REGISTER_UNIVERSITIES.has(university)) {
-          return admin.auth().createUser({
-            email: email,
-            password: password,
-            emailVerified: false,
-            displayName: email,
-            disabled: false,
-          })
-            .then((userRecord) => {
-              console.log("Successfully created new user: ", userRecord.email, userRecord.uid);
-              return {
-                email: userRecord.email,
-                uid: userRecord.uid,
-              };
-            })
-            .catch((error) => {
-              if (error.code === "auth/email-already-exists") {
-                throw new functions.https.HttpsError("invalid-argument", "You already have an account here. Try logging in instead.");
-              } else {
-                console.log("UNKNOWN ERROR (createUser): ", error);
-                throw new functions.https.HttpsError("internal", "Unexpected error. Please try again later.");
-              }
-            });
-        } else {
-          throw new functions.https.HttpsError("invalid-argument", "Your email address is not supported.");
-        }
-      } else {
-        throw new functions.https.HttpsError("invalid-argument", "reCaptcha verification failed. Please try again.");
-      }
-    });
-});
+//   return axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${recaptchaToken}`)
+//     .catch((error) => {
+//       console.log("UNKNOWN ERROR (recaptchaVerify): ", error);
+//       throw new functions.https.HttpsError("internal", "Unknown error. Please try again later.");
+//     })
+//     .then((response) => {
+//       if (response.data.success) {
+//         let university = email.split("@").pop();
+//         if (ALLOWED_REGISTER_UNIVERSITIES.has(university)) {
+//           return admin.auth().createUser({
+//             email: email,
+//             password: password,
+//             emailVerified: false,
+//             displayName: email,
+//             disabled: false,
+//           })
+//             .then((userRecord) => {
+//               console.log("Successfully created new user: ", userRecord.email, userRecord.uid);
+//               return {
+//                 email: userRecord.email,
+//                 uid: userRecord.uid,
+//               };
+//             })
+//             .catch((error) => {
+//               if (error.code === "auth/email-already-exists") {
+//                 throw new functions.https.HttpsError("invalid-argument", "You already have an account here. Try logging in instead.");
+//               } else {
+//                 console.log("UNKNOWN ERROR (createUser): ", error);
+//                 throw new functions.https.HttpsError("internal", "Unexpected error. Please try again later.");
+//               }
+//             });
+//         } else {
+//           throw new functions.https.HttpsError("invalid-argument", "Your email address is not supported.");
+//         }
+//       } else {
+//         throw new functions.https.HttpsError("invalid-argument", "reCaptcha verification failed. Please try again.");
+//       }
+//     });
+// });
 
 // exports.userDocOnCreate = functions.region("europe-west2").auth.user().onCreate((userRecord, context) => {
 //   // In future this can be expanded to allow any university domain names
