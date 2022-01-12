@@ -74,7 +74,7 @@ app.post('/api/register', (req, res) => {
     axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET}&response=${recaptchaToken}`)
         .catch((error) => {
             console.log("UNKNOWN ERROR (recaptchaVerify): ", error);
-            return res.status(500).json({ error: "internal", message: "Unknown error. Please try again later." });
+            return res.status(500).json({ error: "internal", message: "Something went wrong. Please try again later." });
         })
         .then((response) => {
             if (response.data.success) {
@@ -89,17 +89,15 @@ app.post('/api/register', (req, res) => {
                     })
                         .then((userRecord) => {
                             console.log("Successfully created new user: ", userRecord.email, userRecord.uid);
-                            return res.json({
-                                email: userRecord.email,
-                                uid: userRecord.uid,
-                            });
+                            return res.sendStatus(200);
                         })
                         .catch((error) => {
                             if (error.code === "auth/email-already-exists") {
-                                return res.status(400).json({ error: "account-already-exists", message: "You already have an account here. Try logging in instead." });
+                                // Don't leak registered email addresses.
+                                return res.status(400).json({ error: "internal", message: "Something went wrong. Please try again later." });
                             } else {
                                 console.log("UNKNOWN ERROR (createUser): ", error);
-                                return res.status(500).json({ error: "internal", message: "Unexpected error. Please try again later." });
+                                return res.status(500).json({ error: "internal", message: "Something went wrong. Please try again later." });
                             }
                         });
                 } else {
