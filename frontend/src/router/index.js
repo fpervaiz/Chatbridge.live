@@ -3,7 +3,6 @@ import Router from 'vue-router'
 
 const HomePage = () => import('./../components/HomePage.vue')
 const About = () => import('./../components/About.vue')
-const LoginRaven = () => import('./../components/LoginRaven.vue')
 const Rules = () => import('./../components/Rules.vue')
 const Login = () => import('./../components/Login.vue')
 const Register = () => import('./../components/Register.vue')
@@ -17,18 +16,11 @@ Vue.use(Router)
 var routes = [
     { path: '/', component: HomePage },
     { path: '/about', component: About },
-    { path: '/raven', component: LoginRaven },
     { path: '/rules', component: Rules },
     { path: '/chat', component: Chat, meta: { requiresAuth: true } },
-    { path: '*', component: HomePage },
+    { path: '*', component: HomePage }, { path: '/login', component: Login }, { path: '/register', component: Register },
+    { path: '/resetPassword', component: ResetPassword }
 ]
-
-if (process.env.VUE_APP_VERCEL_ENV !== 'production') {
-    routes.push({ path: '/login', component: Login }, { path: '/register', component: Register },
-        { path: '/resetPassword', component: ResetPassword },
-    )
-
-}
 
 const router = new Router({
     mode: 'history',
@@ -39,7 +31,7 @@ const router = new Router({
 router.beforeEach((to, from, next) => {
     const requiresAuth = to.matched.some(x => x.meta.requiresAuth)
     if (requiresAuth && !store.getters.isUserAuth) {
-        next('/raven')
+        next('/login')
     } else {
         next()
     }

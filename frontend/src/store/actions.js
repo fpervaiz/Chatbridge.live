@@ -10,33 +10,47 @@ const actions = {
                     'Content-type': 'application/json'
                 },
                 body: JSON.stringify({ email: payload.email, password: payload.password, recaptchaToken: payload.recaptchaToken })
-            }).then((response) => {
-                console.log(response);
-                firebase
-                    .auth()
-                    .signInWithEmailAndPassword(payload.email, payload.password)
-                    .then((user) => {
-                        user.user.sendEmailVerification().then(() => {
-                            firebase
-                                .auth()
-                                .signOut()
-                                .then(() => {
-                                    let message = {
-                                        type: "success",
-                                        text: "Please check your email to verify your address."
-                                    }
-                                    commit("setMessage", message)
-                                    resolve(message);
-                                });
-                        });
-                    });
             }).catch((error) => {
+                console.log(error)
                 let message = {
                     type: "error",
-                    text: error,
+                    text: "Something went wrong. Please try again later."
                 }
-                commit("setMessage", message);
-                reject(message);
+                commit("setMessage", message)
+                resolve(message);
+            }).then((response) => {
+                console.log(response);
+                if (response.ok) {
+                    firebase
+                        .auth()
+                        .signInWithEmailAndPassword(payload.email, payload.password)
+                        .then((user) => {
+                            user.user.sendEmailVerification().then(() => {
+                                firebase
+                                    .auth()
+                                    .signOut()
+                                    .then(() => {
+                                        let message = {
+                                            type: "success",
+                                            text: "Please check your email to verify your address."
+                                        }
+                                        commit("setMessage", message)
+                                        resolve(message);
+                                    });
+                            });
+                        });
+                } else {
+                    response.json().then((error) => {
+                        let message = {
+                            type: "error",
+                            text: error.message,
+                        }
+                        commit("setMessage", message);
+                        reject(message);
+                    })
+
+
+                }
             });
         })
     },
@@ -80,6 +94,10 @@ const actions = {
                             break;
                         }
                         case "auth/wrong-password": {
+                            message.text = "Incorrect username or password."
+                            break;
+                        }
+                        case "auth/user-not-found": {
                             message.text = "Incorrect username or password."
                             break;
                         }
