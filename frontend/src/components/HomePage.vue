@@ -23,6 +23,7 @@
 
 <script>
 import Logo from "./Logo";
+import utils from "@/utils";
 
 export default {
   name: "HomePage",
@@ -53,14 +54,7 @@ export default {
 
     userIdentity() {
       let email = this.$store.getters.getUserEmail;
-      let university = null;
-
-      switch (email.split("@")[1]) {
-        case "cam.ac.uk": {
-          university = "University of Cambridge";
-          break;
-        }
-      }
+      let university = utils.domainToUniversityName(email.split("@")[1]);
 
       if (university) {
         return `${email} (${university})`;

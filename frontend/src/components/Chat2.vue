@@ -300,6 +300,7 @@ import Autolinker from "autolinker";
 import firebase from "firebase/app";
 import "firebase/remote-config";
 import VueCountdown from "@chenfengyuan/vue-countdown";
+import utils from "@/utils";
 
 //import RuleList from "./RuleList";
 
@@ -397,14 +398,7 @@ export default {
   computed: {
     userIdentity() {
       let email = this.$store.getters.getUserEmail;
-      let university = null;
-
-      switch (email.split("@")[1]) {
-        case "cam.ac.uk": {
-          university = "University of Cambridge";
-          break;
-        }
-      }
+      let university = utils.domainToUniversityName(email.split("@")[1]);
 
       if (university) {
         return `${email} (${university})`;

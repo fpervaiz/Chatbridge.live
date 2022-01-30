@@ -5,8 +5,8 @@ const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET || ""
 const PORT = process.env.PORT || 3000
 const TURN_SECRET = process.env.TURN_SECRET
 const SERVICE_ACCOUNT = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from(process.env.FIREBASE_CONFIG_B64, 'base64').toString('ascii')) : require('./firebaseSA.credential.json')
-const ALLOWED_UNIVERSITIES = process.env.ALLOWED_UNIVERSITIES ? new Set(JSON.parse(process.env.ALLOWED_UNIVERSITIES)) : new Set(['cam.ac.uk', 'gmail.com'])
-const ALLOWED_REGISTER_UNIVERSITIES = process.env.ALLOWED_REGISTER_UNIVERSITIES ? new Set(JSON.parse(process.env.ALLOWED_REGISTER_UNIVERSITIES)) : new Set(['cam.ac.uk', 'gmail.com'])
+const ALLOWED_UNIVERSITIES = process.env.ALLOWED_UNIVERSITIES ? new Set(JSON.parse(process.env.ALLOWED_UNIVERSITIES)) : new Set(['cam.ac.uk', 'chatbridge.live'])
+const ALLOWED_REGISTER_UNIVERSITIES = process.env.ALLOWED_REGISTER_UNIVERSITIES ? new Set(JSON.parse(process.env.ALLOWED_REGISTER_UNIVERSITIES)) : new Set(['chatbridge.live'])
 
 const admin = require('firebase-admin')
 const { v4: uuidv4 } = require('uuid')
