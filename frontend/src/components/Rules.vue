@@ -2,6 +2,8 @@
   <v-container>
     <v-row justify="center" align="center">
       <v-col justify="center" cols="10" md="6" class="justify-content">
+        <Logo />
+
         <h2 class="my-3">Community Rules</h2>
         <p>
           Here's a quick reminder of our rules for using Chatbridge. Please
@@ -23,11 +25,12 @@
 
 <script>
 import RuleList from "./RuleList";
+import Logo from "./Logo";
 
 export default {
   name: "Rules",
 
-  components: { RuleList },
+  components: { RuleList, Logo },
 };
 </script>
 

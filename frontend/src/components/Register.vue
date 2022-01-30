@@ -1,5 +1,9 @@
 <template>
   <v-container fluid class="fluid">
+    <v-row justify="center" align="center" class="text-center"
+      ><v-col> <Logo /> </v-col
+    ></v-row>
+
     <v-row justify="center" align="center" class="my-5">
       <v-col cols="10" md="6" class="text-center">
         <h1>Sign Up</h1>
@@ -18,7 +22,7 @@
               ></v-text-field>
             </v-col>
           </v-row>
-          <v-row>
+          <v-row class="mt-n6">
             <v-col cols="6">
               <v-text-field
                 v-model="password"
@@ -77,6 +81,8 @@ import firebase from "firebase/app";
 import "firebase/remote-config";
 import VueRecaptcha from "vue-recaptcha";
 
+import Logo from "./Logo";
+
 export default {
   name: "RegisterForm",
 
@@ -105,7 +111,7 @@ export default {
       .catch((err) => console.log(err));
   },
 
-  components: { VueRecaptcha },
+  components: { VueRecaptcha, Logo },
 
   computed: {
     passwordMatch() {
