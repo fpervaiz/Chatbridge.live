@@ -349,6 +349,7 @@ export default {
       chatMessageInput: "",
       chatContainer: null,
       chatArea: null,
+      chatOpen: false,
 
       blockConfirmDialog: false,
       blockReportDialog: false,
@@ -614,6 +615,10 @@ export default {
         () => (this.chatArea.scrollTop = this.chatArea.scrollHeight),
         100
       );
+
+      if (!this.chatOpen) {
+        this.toggleChat();
+      }
     },
 
     closePeerConnection(isInitiator) {
@@ -675,6 +680,7 @@ export default {
 
     toggleChat() {
       this.chatContainer.classList.toggle("open");
+      this.chatOpen = !this.chatOpen;
     },
 
     toggleFullScreen() {
@@ -707,13 +713,6 @@ export default {
     window.onbeforeunload = () => {
       return "";
     };
-
-    for (let i = 1; i < 100; i++) {
-      this.addChatMessage({
-        sender: "Admin",
-        text: "Welcome to the chat app. Please search for a friend to chat with.",
-      });
-    }
 
     var self = this;
 
@@ -755,6 +754,11 @@ export default {
                 self.userCamStream = stream;
                 self.$analytics.logEvent("chat_app_ready");
                 self.appState = appStates.READY;
+
+                self.addChatMessage({
+                  sender: "_STATUS_GREEN",
+                  text: `Hi ${self.$store.getters.getUserEmail}!`,
+                });
               })
               .catch(function (error) {
                 console.log(error);
