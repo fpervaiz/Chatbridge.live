@@ -38,8 +38,7 @@
         id="peerCam"
         autoplay="true"
         playsinline
-        muted="muted"
-        :src-object.prop.camel="userCamStream"
+        :src-object.prop.camel="peerCamStream"
       ></video>
     </div>
 
@@ -896,6 +895,7 @@ export default {
       this.wsConnected = false;
     }
 
+    window.onbeforeunload = null;
     document.removeEventListener("beforeunload", this.onHardClose);
     this.$analytics.logEvent("chat_app_exited");
   },
