@@ -82,7 +82,6 @@ export default {
     password: "",
 
     message: null,
-    ravenMessage: null,
 
     emailRules: [
       (v) => !!v || "Email address is required",
@@ -118,17 +117,17 @@ export default {
     },
 
     loginRaven() {
-      this.ravenMessage = null;
+      this.message = null;
 
       this.$store
         .dispatch("loginUserViaRavenAction")
         .then((response) => {
-          this.ravenMessage = response;
+          this.message = response;
           this.$analytics.logEvent("login");
           this.$router.replace("chat");
         })
         .catch((error) => {
-          this.ravenMessage = error;
+          this.message = error;
         });
     },
   },
