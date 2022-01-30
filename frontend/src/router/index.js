@@ -7,7 +7,8 @@ const Rules = () => import('./../components/Rules.vue')
 const Login = () => import('./../components/Login.vue')
 const Register = () => import('./../components/Register.vue')
 const ResetPassword = () => import('./../components/ResetPassword.vue')
-const Chat = () => import('./../components/Chat.vue')
+// const Chat = () => import('./../components/Chat.vue')
+const Chat2 = () => import('./../components/Chat2.vue')
 
 import store from './../store';
 
@@ -17,7 +18,8 @@ var routes = [
     { path: '/', component: HomePage },
     { path: '/about', component: About },
     { path: '/rules', component: Rules },
-    { path: '/chat', component: Chat, meta: { requiresAuth: true } },
+    // { path: '/chat', component: Chat, meta: { requiresAuth: true } },
+    { path: '/chat', component: Chat2, meta: { requiresAuth: true } },
     { path: '*', component: HomePage }, { path: '/login', component: Login }, { path: '/register', component: Register },
     { path: '/resetPassword', component: ResetPassword }
 ]

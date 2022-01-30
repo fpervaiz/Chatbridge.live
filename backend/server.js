@@ -1,6 +1,6 @@
 require('dotenv').config()
 
-const CORS_ORIGIN = process.env.CORS_ORIGIN ? new Set(JSON.parse(process.env.CORS_ORIGIN)) : new Set(['http://localhost:8080'])
+const CORS_ORIGIN = process.env.CORS_ORIGIN ? new Set(JSON.parse(process.env.CORS_ORIGIN)) : new Set(['http://localhost:8081'])
 const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET || ""
 const PORT = process.env.PORT || 3000
 const TURN_SECRET = process.env.TURN_SECRET
