@@ -77,8 +77,6 @@
 </template>
 
 <script>
-import firebase from "firebase/app";
-import "firebase/remote-config";
 import VueRecaptcha from "vue-recaptcha";
 
 import Logo from "./Logo";
@@ -87,28 +85,14 @@ export default {
   name: "RegisterForm",
 
   created() {
-    this.remoteConfig = firebase.remoteConfig();
-    this.remoteConfig.settings.minimumFetchIntervalMillis = 600000;
-
-    this.remoteConfig
-      .fetchAndActivate()
-      .then(() => {
-        let config = this.remoteConfig
-          .getValue("allow_register_domains")
-          .asString();
-        if (config) {
-          let allowRegisterDomains = JSON.parse(config);
-          // eslint-disable-next-line
-          let exp = `^(([^<>()[\\]\\.,;:\s@']+(\.[^<>()\\[\]\\.,;:\s@']+)*)|('.+'))@(${allowRegisterDomains.join(
-            "|"
-          )})$`;
-          console.log(new RegExp(exp));
-          this.emailRules.push(
-            (v) => new RegExp(exp).test(v) || "Invalid email address"
-          );
-        }
-      })
-      .catch((err) => console.log(err));
+    let allowRegisterDomains = ["chatbridge.live"];
+    // eslint-disable-next-line
+    let exp = `^(([^<>()[\\]\\.,;:\s@']+(\.[^<>()\\[\]\\.,;:\s@']+)*)|('.+'))@(${allowRegisterDomains.join(
+      "|"
+    )})$`;
+    this.emailRules.push(
+      (v) => new RegExp(exp).test(v) || "Invalid email address"
+    );
   },
 
   components: { VueRecaptcha, Logo },

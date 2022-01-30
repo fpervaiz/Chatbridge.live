@@ -11,6 +11,16 @@ const utils = {
                     .then((response) => response.json().then((data) => resolve(data.url)));
             }
         })
+    },
+    domainToUniversityName: (domain) => {
+        switch (domain) {
+            case "cam.ac.uk": {
+                return "University of Cambridge";
+            }
+            case "chatbridge.live": {
+                return "Chatbridge Admin";
+            }
+        }
     }
 }
 
