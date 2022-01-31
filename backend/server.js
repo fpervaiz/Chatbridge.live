@@ -60,7 +60,7 @@ app.get('/', (req, res) => {
 })
 
 app.post('/config/branch/' + CONFIG_TOKEN, (req, res) => {
-    if (ENVIRONMENT != 'production') {
+    if (ENVIRONMENT == 'staging') {
         const name = req.body.name
         const num = req.body.num
 
@@ -76,7 +76,7 @@ app.post('/config/branch/' + CONFIG_TOKEN, (req, res) => {
 })
 
 app.get('/config/url', (req, res) => {
-    if (ENVIRONMENT != 'production') {
+    if (ENVIRONMENT == 'staging') {
         const name = req.query.name
 
         firebase.firestore()
