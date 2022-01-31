@@ -1,6 +1,7 @@
 require('dotenv').config()
 
 const ENVIRONMENT = process.env.ENVIRONMENT || 'development'
+const CONFIG_TOKEN = process.env.CONFIG_TOKEN || 'x'
 const CORS_ORIGIN = process.env.CORS_ORIGIN ? new Set(JSON.parse(process.env.CORS_ORIGIN)) : new Set(['http://localhost:8080'])
 const PORT = process.env.PORT || 3000
 const TURN_SECRET = process.env.TURN_SECRET
@@ -58,7 +59,7 @@ app.get('/', (req, res) => {
     res.redirect('https://chatbridge.live')
 })
 
-app.post('/config/branch', (req, res) => {
+app.post('/config/branch/' + CONFIG_TOKEN, (req, res) => {
     if (ENVIRONMENT != 'production') {
         const name = req.body.name
         const num = req.body.num
