@@ -1,10 +1,12 @@
 import firebase from 'firebase/app';
 import 'firebase/auth';
 
+import utils from '@/utils';
+
 const actions = {
-    registerUserAction({ commit }, payload) {
+    registerUserAction({ commit, state }, payload) {
         return new Promise((resolve, reject) => {
-            return fetch(process.env.VUE_APP_BACKEND_URL + '/api/register', {
+            return fetch(state.backendUrl + '/api/register', {
                 method: 'POST',
                 headers: {
                     'Content-type': 'application/json'
@@ -186,15 +188,19 @@ const actions = {
 
     checkAuthAction({ commit }) {
         return new Promise((resolve) => {
-            firebase.auth().onAuthStateChanged(user => {
-                if (user && user.emailVerified) {
-                    commit("setUser", user)
-                    resolve(user)
-                }
-                else {
-                    commit("setUser", null)
-                    resolve(null)
-                }
+            utils.getBackendUrl().then((backendUrl) => {
+                commit("setBackendUrl", backendUrl);
+
+                firebase.auth().onAuthStateChanged(user => {
+                    if (user && user.emailVerified) {
+                        commit("setUser", user)
+                        resolve(user)
+                    }
+                    else {
+                        commit("setUser", null)
+                        resolve(null)
+                    }
+                })
             })
         })
     },

@@ -7,7 +7,7 @@ import getters from "./getters";
 Vue.use(Vuex);
 
 const initialState = () => {
-    return { user: null, message: null };
+    return { user: null, message: null, backendUrl: null };
 };
 
 export default new Vuex.Store({
