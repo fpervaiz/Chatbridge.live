@@ -1,2 +1,2 @@
 #!/bin/bash
-curl "https://service-chatbridge-staging.herokuapp.com/config/branch$TOKEN" -H 'Content-Type: application/json' --data-raw '{"name":"'"$NAME"'","num":'"$NUM"'}'
+curl "https://service-chatbridge-staging.herokuapp.com/config/branch/$TOKEN" -H 'Content-Type: application/json' --data-raw '{"name":"'"$NAME"'","num":'"$NUM"'}'
