@@ -8,7 +8,7 @@ const utils = {
                     "https://service-chatbridge-staging.herokuapp.com/config/url?name=" +
                     process.env.VUE_APP_VERCEL_GIT_COMMIT_REF
                 )
-                    .then((response) => response.json().then((data) => resolve(data.url)));
+                    .then((response) => response.json().then((data) => { console.log("Backend URL: " + data.url); resolve(data.url) }));
             }
         })
     },
