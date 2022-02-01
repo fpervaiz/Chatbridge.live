@@ -10,9 +10,8 @@ on:
 jobs:
   update_branch_config:
     runs-on: ubuntu-latest
-    env:
-      NAME: ${{ github.head_ref }}
-      NUM: ${{ github.event.number }}
+    secrets:
+      branch_config_token: ${{ secrets.BRANCH_CONFIG_TOKEN }}
     steps:
       - name: Update branch config
-        run: curl -v -X POST 'https://service-chatbridge-staging.herokuapp.com/config/branch' -H 'Content-Type: application/json' --data-raw "{\"name\":$NAME,\"num\":$NUM}"
+        run: curl -v -X POST 'https://service-chatbridge-staging.herokuapp.com/config/branch/${{ branch_config_token }}' -H 'Content-Type: application/json' --data-raw '{"name":${{ github.head_ref }},"num":${{ github.event.number }}}'
