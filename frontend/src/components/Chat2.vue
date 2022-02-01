@@ -299,6 +299,7 @@ import Autolinker from "autolinker";
 import firebase from "firebase/app";
 import "firebase/remote-config";
 import VueCountdown from "@chenfengyuan/vue-countdown";
+import { format } from "date-fns";
 import utils from "@/utils";
 
 //import RuleList from "./RuleList";
@@ -608,8 +609,8 @@ export default {
 
     addChatMessage(chatMessage) {
       chatMessage.html = this.autolinker.link(chatMessage.text);
-      const date = new Date();
-      chatMessage.time = `${date.getHours()}:${date.getMinutes()} `;
+      const time = format(new Date(), "HH:mm");
+      chatMessage.time = `${time} `;
       this.chatMessages.push(chatMessage);
       setTimeout(
         () => (this.chatArea.scrollTop = this.chatArea.scrollHeight),
