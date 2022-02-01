@@ -1,0 +1,18 @@
+name: Update branch config (development only)
+
+on:
+  pull_request:
+    types:
+      - opened
+    branches-ignore:
+      - main
+
+jobs:
+  update_branch_config:
+    runs-on: ubuntu-latest
+    env:
+      NAME: ${{ github.head_ref }}
+      NUM: ${{ github.event.number }}
+    steps:
+      - name: Update branch config
+        run: curl -v -X POST 'https://service-chatbridge-staging.herokuapp.com/config/branch' -H 'Content-Type: application/json' --data-raw "{\"name\":$NAME,\"num\":$NUM}"
