@@ -2,8 +2,7 @@ name: Update branch config (development only)
 
 on:
   pull_request:
-    types:
-      - opened
+    types: [opened, reopened, synchronize]
     branches-ignore:
       - main
 
