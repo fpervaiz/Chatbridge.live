@@ -1,0 +1,19 @@
+name: Update branch config (development only)
+
+on:
+  pull_request:
+    types:
+      - opened
+    branches-ignore:
+      - main
+
+jobs:
+  update_branch_config:
+    runs-on: ubuntu-latest
+    env:
+      NAME: ${{ github.head_ref }}
+      NUM: ${{ github.event.number }}
+      TOKEN: ${{ secrets.BRANCH_CONFIG_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: ./scripts/ci/branch_config

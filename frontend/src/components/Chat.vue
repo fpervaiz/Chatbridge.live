@@ -244,6 +244,8 @@ import Autolinker from "autolinker";
 
 import RuleList from "./RuleList";
 
+import utils from "@/utils";
+
 const appStates = {
   WS_CONNECTING: 1,
   STARTING: 2,
@@ -265,6 +267,8 @@ export default {
 
   data() {
     return {
+      backendUrl: null,
+
       appState: appStates.WS_CONNECTING,
 
       matchingSocket: null,
@@ -573,6 +577,10 @@ export default {
     toggleUserShrink() {
       this.userCamShrink = !this.userCamShrink;
     },
+
+    setBackendUrl() {
+      utils.getBackendUrl().then((url) => (this.backendUrl = url));
+    },
   },
 
   mounted() {
@@ -581,6 +589,8 @@ export default {
     this.$analytics.logEvent("chat_app_start");
 
     this.chatBox = document.getElementById("chatbox");
+
+    self.setBackendUrl();
 
     self.$store
       .dispatch("getAuthIdTokenAction")
@@ -591,7 +601,7 @@ export default {
         });
       })
       .then((idToken) => {
-        self.matchingSocket = io(process.env.VUE_APP_BACKEND_URL, {
+        self.matchingSocket = io(self.backendUrl, {
           transports: ["websocket"],
           reconnectionAttempts: 5,
           auth: {

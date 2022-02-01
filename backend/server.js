@@ -1,6 +1,8 @@
 require('dotenv').config()
 
-const CORS_ORIGIN = process.env.CORS_ORIGIN ? new Set(JSON.parse(process.env.CORS_ORIGIN)) : new Set(['http://localhost:8080'])
+const ENVIRONMENT = process.env.ENVIRONMENT || 'development'
+const CONFIG_TOKEN = process.env.CONFIG_TOKEN || 'x'
+const CORS_ORIGIN = process.env.CORS_ORIGIN ? new Set(JSON.parse(process.env.CORS_ORIGIN)) : new Set(['http://localhost:8081'])
 const PORT = process.env.PORT || 3000
 const TURN_SECRET = process.env.TURN_SECRET
 const SERVICE_ACCOUNT = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from(process.env.FIREBASE_CONFIG_B64, 'base64').toString('ascii')) : require('./firebaseSA.credential.json')
@@ -11,12 +13,17 @@ const generateName = require('sillyname')
 const crypto = require('crypto');
 
 const app = require('express')()
+const cors = require('cors');
+const bodyParser = require('body-parser');
 const http = require('http').Server(app)
 const io = require('socket.io')(http, {
     cors: {
         origin: CORS_ORIGIN
     }
 })
+
+app.use(cors());
+app.use(bodyParser.json());
 
 var firebase = admin.initializeApp({
     credential: admin.credential.cert(SERVICE_ACCOUNT)
@@ -50,6 +57,37 @@ var queueStats = {
 
 app.get('/', (req, res) => {
     res.redirect('https://chatbridge.live')
+})
+
+app.post('/config/branch/' + CONFIG_TOKEN, (req, res) => {
+    if (ENVIRONMENT == 'staging') {
+        const name = req.body.name
+        const num = req.body.num
+
+        firebase.firestore()
+            .collection('config')
+            .doc(`branch|${name}`)
+            .set({ num })
+            .then(() => res.sendStatus(200))
+            .catch((err) => res.status(500).send(err))
+    } else {
+        res.sendStatus(404)
+    }
+})
+
+app.get('/config/url', (req, res) => {
+    if (ENVIRONMENT == 'staging') {
+        const name = req.query.name
+
+        firebase.firestore()
+            .collection('config')
+            .doc(`branch|${name}`)
+            .get()
+            .then((doc) => { const data = doc.data(); res.status(200).json({ url: `https://service-chatbridge-pr-${data.num}.herokuapp.com` }) })
+            .catch((err) => res.status(500).send(err))
+    } else {
+        res.sendStatus(404)
+    }
 })
 
 setInterval(async () => {

@@ -1,0 +1,11 @@
+{
+    "name": "chatbridge.live",
+    "engines": {
+        "node": ">=16",
+        "npm": ">=7"
+    },
+    "workspaces": [
+        "./frontend",
+        "./backend"
+    ]
+}
