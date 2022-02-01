@@ -2,7 +2,7 @@ require('dotenv').config()
 
 const ENVIRONMENT = process.env.ENVIRONMENT || 'development'
 const CONFIG_TOKEN = process.env.CONFIG_TOKEN || 'x'
-const CORS_ORIGIN = process.env.CORS_ORIGIN ? new Set(JSON.parse(process.env.CORS_ORIGIN)) : new Set(['http://localhost:8080'])
+const CORS_ORIGIN = process.env.CORS_ORIGIN ? new Set(JSON.parse(process.env.CORS_ORIGIN)) : new Set(['http://localhost:8081'])
 const PORT = process.env.PORT || 3000
 const TURN_SECRET = process.env.TURN_SECRET
 const SERVICE_ACCOUNT = process.env.FIREBASE_CONFIG_B64 ? JSON.parse(Buffer.from(process.env.FIREBASE_CONFIG_B64, 'base64').toString('ascii')) : require('./firebaseSA.credential.json')
