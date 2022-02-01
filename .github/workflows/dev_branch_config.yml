@@ -16,4 +16,6 @@ jobs:
       TOKEN: ${{ secrets.BRANCH_CONFIG_TOKEN }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: 'staging'
       - run: ./scripts/ci/branch_config
