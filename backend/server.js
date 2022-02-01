@@ -158,7 +158,7 @@ setInterval(async () => {
 }, 10000)
 
 io.use((socket, next) => {
-    if (socket.request.headers.origin && CORS_ORIGIN.has(socket.request.headers.origin)) {
+    if (ENVIRONMENT == 'development' || (socket.request.headers.origin && CORS_ORIGIN.has(socket.request.headers.origin))) {
         next()
     }
     else {
