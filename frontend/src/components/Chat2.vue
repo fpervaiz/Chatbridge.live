@@ -13,7 +13,7 @@
       <v-tooltip right
         ><template v-slot:activator="{ on }"
           ><div v-on="on">
-            <v-btn fab elevation="10" v-on="on"
+            <v-btn fab elevation="1" v-on="on"
               ><v-icon dark> mdi-account </v-icon></v-btn
             >
           </div></template
@@ -25,7 +25,7 @@
       <v-tooltip bottom
         ><template v-slot:activator="{ on }"
           ><div v-on="on">
-            <v-btn fab elevation="10" v-on="on" @click="toggleFullScreen"
+            <v-btn fab elevation="1" v-on="on" @click="toggleFullScreen"
               ><v-icon dark> mdi-fullscreen </v-icon></v-btn
             >
           </div></template
@@ -64,7 +64,7 @@
           ><div v-on="on" style="float: left">
             <v-btn
               fab
-              elevation="10"
+              elevation="1"
               x-large
               class="mx-3"
               v-on="on"
@@ -79,7 +79,7 @@
           ><div v-on="on" style="float: left">
             <v-btn
               fab
-              elevation="10"
+              elevation="1"
               x-large
               class="mx-3"
               @click="search"
@@ -95,7 +95,25 @@
           ><div v-on="on" style="float: left">
             <v-btn
               fab
-              elevation="10"
+              :light="micMuted"
+              elevation="1"
+              x-large
+              class="mx-3"
+              @click="toggleMic()"
+              v-on="on"
+              :disabled="enableMuteMic"
+              ><v-icon dark> mdi-microphone-off </v-icon></v-btn
+            >
+          </div></template
+        ><span v-if="micMuted">Unmute mic</span
+        ><span v-else>Mute mic</span></v-tooltip
+      >
+      <v-tooltip top>
+        <template v-slot:activator="{ on }"
+          ><div v-on="on" style="float: left">
+            <v-btn
+              fab
+              elevation="1"
               x-large
               class="mx-3"
               @click="closePeerConnection(true)"
@@ -111,7 +129,7 @@
           ><div v-on="on" style="float: left">
             <v-btn
               fab
-              elevation="10"
+              elevation="1"
               x-large
               class="mx-3"
               color="error"
@@ -343,8 +361,7 @@ export default {
       userCamStream: null,
       peerCamStream: null,
 
-      userCamShrink: false,
-      peerCamShrink: false,
+      micMuted: false,
 
       chatMessages: [],
       chatMessageInput: "",
@@ -406,6 +423,10 @@ export default {
       } else {
         return email;
       }
+    },
+
+    enableMuteMic() {
+      return !this.appState === appStates.STARTING;
     },
 
     enableSearch() {
@@ -682,6 +703,13 @@ export default {
     toggleChat() {
       this.chatContainer.classList.toggle("open");
       this.chatOpen = !this.chatOpen;
+    },
+
+    toggleMic() {
+      this.micMuted = !this.micMuted;
+      this.userCamStream.getAudioTracks().forEach((track) => {
+        track.enabled = !track.enabled;
+      });
     },
 
     toggleFullScreen() {
