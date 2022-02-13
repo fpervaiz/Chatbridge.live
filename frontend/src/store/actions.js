@@ -12,8 +12,7 @@ const actions = {
                     'Content-type': 'application/json'
                 },
                 body: JSON.stringify({ email: payload.email, password: payload.password, recaptchaToken: payload.recaptchaToken })
-            }).catch((error) => {
-                console.log(error)
+            }).catch(() => {
                 let message = {
                     type: "error",
                     text: "Something went wrong. Please try again later."
@@ -21,7 +20,6 @@ const actions = {
                 commit("setMessage", message)
                 resolve(message);
             }).then((response) => {
-                console.log(response);
                 if (response.ok) {
                     firebase
                         .auth()
