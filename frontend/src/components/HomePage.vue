@@ -34,8 +34,8 @@ export default {
     return {
       subtitles: [
         //"Rumour has it Stephen Toope is on here.",
-        "Find the one you've been looking for.",
-        "Scientifically proven to be more fun than binging lectures.",
+        //"Find the one you've been looking for.",
+        "More fun than watching lectures.",
         //"Isn't the name clever?",
         "Ain't no pandemic large enough.",
       ],
