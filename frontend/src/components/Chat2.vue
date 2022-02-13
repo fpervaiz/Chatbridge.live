@@ -136,7 +136,7 @@
               @click="
                 () => {
                   userConnected
-                    ? (this.blockConfirmDialog = true)
+                    ? (blockConfirmDialog = true)
                     : blockReportPeer();
                 }
               "
