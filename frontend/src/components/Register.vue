@@ -84,17 +84,6 @@ import Logo from "./Logo";
 export default {
   name: "RegisterForm",
 
-  created() {
-    let allowRegisterDomains = ["chatbridge.live"];
-    // eslint-disable-next-line
-    let exp = `^(([^<>()[\\]\\.,;:\s@']+(\.[^<>()\\[\]\\.,;:\s@']+)*)|('.+'))@(${allowRegisterDomains.join(
-      "|"
-    )})$`;
-    this.emailRules.push(
-      (v) => new RegExp(exp).test(v) || "Invalid email address"
-    );
-  },
-
   components: { VueRecaptcha, Logo },
 
   computed: {
@@ -125,7 +114,16 @@ export default {
       (v) => !!v || "Name is required",
       (v) => (v && v.length <= 10) || "Name must be less than 10 characters",
     ],
-    emailRules: [(v) => !!v || "Email address is required"],
+    emailRules: [
+      (v) => !!v || "Email address is required",
+      (v) =>
+        new RegExp(
+          // eslint-disable-next-line
+          `^(([^<>()[\\]\\.,;:\s@']+(\.[^<>()\\[\]\\.,;:\s@']+)*)|('.+'))@(${JSON.parse(
+            process.env.VUE_APP_ALLOWED_REGISTER_UNIVERSITIES
+          ).join("|")})$`
+        ).test(v) || "Invalid email address",
+    ],
     /*
     passwordRules: [
       (v) => !!v || "Password is required",

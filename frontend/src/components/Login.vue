@@ -86,10 +86,12 @@ export default {
     emailRules: [
       (v) => !!v || "Email address is required",
       (v) =>
-        // eslint-disable-next-line
-        /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(
-          v
-        ) || "Invalid email address",
+        new RegExp(
+          // eslint-disable-next-line
+          `^(([^<>()[\\]\\.,;:\s@']+(\.[^<>()\\[\]\\.,;:\s@']+)*)|('.+'))@(${JSON.parse(
+            process.env.VUE_APP_ALLOWED_REGISTER_UNIVERSITIES
+          ).join("|")})$`
+        ).test(v) || "Invalid email address",
     ],
 
     passwordRules: [(v) => !!v || "Password is required"],
