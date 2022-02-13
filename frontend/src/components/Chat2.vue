@@ -232,7 +232,7 @@
           indeterminate
           color="primary"
         ></v-progress-circular
-        >Connecting you to our matchmaking genie...</v-alert
+        >Please wait...</v-alert
       >
     </v-overlay>
     <v-dialog v-model="blockConfirmDialog" persistent max-width="576">
@@ -906,7 +906,7 @@ export default {
             }
             default:
               this.wsConnectionError =
-                "Looks like our matchmaking genie has gone missing. Please try again later.";
+                "There's an issue on our end. Please try again later.";
           }
           this.matchingSocket.removeAllListeners();
         });
