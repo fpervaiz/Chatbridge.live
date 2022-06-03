@@ -1,5 +1,9 @@
 <template>
   <v-container fluid class="fluid">
+    <v-row justify="center" align="center" class="text-center"
+      ><v-col> <Logo /> </v-col
+    ></v-row>
+
     <v-row justify="center" align="center" class="my-5">
       <v-col cols="10" md="6" class="text-center">
         <h1>Sign Up</h1>
@@ -18,7 +22,7 @@
               ></v-text-field>
             </v-col>
           </v-row>
-          <v-row>
+          <v-row class="mt-n6">
             <v-col cols="6">
               <v-text-field
                 v-model="password"
@@ -75,10 +79,12 @@
 <script>
 import VueRecaptcha from "vue-recaptcha";
 
+import Logo from "./Logo";
+
 export default {
   name: "RegisterForm",
 
-  components: { VueRecaptcha },
+  components: { VueRecaptcha, Logo },
 
   computed: {
     passwordMatch() {
@@ -88,6 +94,8 @@ export default {
   },
 
   data: () => ({
+    remoteConfig: null,
+
     recaptchaKey: "6Lcg3TMaAAAAACxa6pIya8mZ4SLJ8bpGN-OxBXFM",
     recaptchaVerified: false,
     recaptchaToken: "",
@@ -109,9 +117,12 @@ export default {
     emailRules: [
       (v) => !!v || "Email address is required",
       (v) =>
-        /^(([^<>()[\]\\.,;:\s@']+(\.[^<>()\\[\]\\.,;:\s@']+)*)|('.+'))@cam.ac.uk$/.test(
-          v
-        ) || "Invalid email address",
+        new RegExp(
+          // eslint-disable-next-line
+          `^(([^<>()[\\]\\.,;:\s@']+(\.[^<>()\\[\]\\.,;:\s@']+)*)|('.+'))@(${JSON.parse(
+            process.env.VUE_APP_ALLOWED_REGISTER_UNIVERSITIES
+          ).join("|")})$`
+        ).test(v) || "Invalid email address",
     ],
     /*
     passwordRules: [

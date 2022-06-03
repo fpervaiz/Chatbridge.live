@@ -5,7 +5,6 @@
         <h4>Be nice to each other.</h4>
         <p class="text--secondary">
           Be kind, respectful and polite, just like you would in real life.
-          Spread the love.
         </p>
       </li>
 

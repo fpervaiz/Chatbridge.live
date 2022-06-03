@@ -1,47 +1,41 @@
 <template>
   <v-app>
-    <NavBar />
     <v-main>
-      <transition name="slide" mode="out-in">
-        <router-view />
-      </transition>
+      <v-container fluid fill-height class="ma-0 pa-0">
+        <transition name="slide" mode="out-in">
+          <router-view />
+        </transition>
+      </v-container>
     </v-main>
-    <!-- <Footer /> -->
   </v-app>
 </template>
 
 <script>
-import NavBar from "./components/NavBar";
-// import Footer from "./components/Footer";
-
 export default {
   name: "App",
 
-  components: {
-    NavBar,
-    // Footer,
-  },
+  components: {},
 
-  data: () => ({
-    //
-  }),
+  data: () => ({}),
 };
 </script>
 
 <style>
-@font-face {
-  font-family: "a Affirmation";
-  src: local("a Affirmation"),
-    url(assets/fonts/aAffirmation.otf) format("opentype");
+html {
+  overflow-y: auto;
+}
+
+a {
+  text-decoration: none;
 }
 
 .slide-enter-active,
 .slide-leave-active {
-  transition: opacity 0.25s, transform 0.25s;
+  transition: opacity 0.2s, transform 0.2s;
 }
 .slide-enter,
 .slide-leave-to {
   opacity: 0;
-  transform: translateX(-30%);
+  transform: translateY(10%);
 }
 </style>

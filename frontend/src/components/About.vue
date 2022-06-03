@@ -3,21 +3,34 @@
     <h1 class="display-2 font-weight-bold my-3">About</h1>
     <h2 class="subheading font-weight-regular">
       Chatbridge connects you instantly to anonymous one-to-one video chats with
-      other Cambridge students.
+      other students from your university.
     </h2>
     <hr class="my-5" />
     <h3>Why does Chatbridge exist?</h3>
     <p>
-      The pandemic has stopped us all from meeting and socialising with new
-      people. No longer can you bump into your future best friend during
-      lectures; no longer can you catch the eye of your future romance at
-      Mainsbury's. Chatbridge is here to (virtually) bring that back and to help
-      you encounter some more of the 20,000 students at our university.
+      Chatbridge helps you quickly, easily and safely meet other students at
+      your university.
+    </p>
+    <p>
+      The COVID-19 pandemic stopped us all from meeting and socialising with new
+      people. Chatbridge was conceived during the depths of lockdown to help
+      overcome this. While originally built for University of Cambridge
+      students, Chatbridge is now available to all universities and colleges.
+      Get in touch to enable support for your institution!
     </p>
     <h3>How does it work?</h3>
     <p>It's really simple!</p>
     <ul>
-      <li>Login via Raven to prove you're a member of the University.</li>
+      <li>
+        If you don't have one already, create a Chatbridge account using your
+        university email address. University of Cambridge students do not need
+        to create an account - log in directly via Raven instead.
+      </li>
+      <li>
+        After logging in, you'll be taken to the video chat app. You will be
+        asked to grant permission to your webcam and mic, which are necessary to
+        use Chatbridge.
+      </li>
       <li>
         When you click 'Find me someone', we'll connect you to a video chat with
         another online user. Depending on how many other people are online, this
@@ -25,8 +38,7 @@
       </li>
       <li>
         The chats are completely anonymous - no names or IDs are shared. We
-        instead assign you randomly generated names. (Yes, we know they're
-        pretty terrible at the moment. A fix is top priority.)
+        instead assign you (pretty bad) randomly generated names.
       </li>
       <li>
         You can chat for as long as you like. End the chat by hitting
@@ -54,18 +66,27 @@
     </p>
     <h3>Who can use Chatbridge?</h3>
     <p>
-      Anyone with a Raven login and a laptop/desktop/tablet/mobile. We're
-      working on a way of limiting users to students only.
+      Anyone with a laptop/desktop/tablet and a student email address at these
+      institutions:
+    </p>
+    <ul>
+      <li>University of Cambridge (@cam.ac.uk)</li>
+    </ul>
+    <p></p>
+    <p>
+      We perform checks using your email address to ensure you are a student and
+      not e.g. staff.
     </p>
     <h3>What about other universities?</h3>
     <p>
-      Chatbridge support for students at other universities is on the way. Come
-      back soon.
+      We can make Chatbridge available to your university or college! Please get
+      in touch at
+      <a href="mailto:admin@chatbridge.live">admin@chatbridge.live</a>.
     </p>
-    <h3>Who is Chatbridge run by?</h3>
+    <h3>Who runs Chatbridge?</h3>
     <p>
-      Built and currently run by an engineering student at Churchill College who
-      is now laughably behind on lectures.
+      Chatbridge was built and is maintained by an engineering student at
+      Cambridge. The project is growing and volunteers are very welcome.
     </p>
     <h3>Can I contribute?</h3>
     <p>
@@ -211,7 +232,7 @@
       </li>
       <li>
         Use the Site as part of any effort to compete with us or otherwise use
-        the Site and/or the Content for any revenue-generating endeavor or
+        the Site and/or the Content for any revenue-generating endeavour or
         commercial enterprise.
       </li>
     </ol>
@@ -359,7 +380,7 @@
     </p>
 
     <ul>
-      <li>Uniquely identifying you as a University of Cambridge member</li>
+      <li>Uniquely identifying you as a member of your institution</li>
       <li>Enforcing your list of blocked users</li>
       <li>Taking action in response to user reports you have submitted</li>
       <li>Contacting you only regarding updates to your account</li>
@@ -394,29 +415,29 @@
     <p>Every user is entitled to the following:</p>
     <ul>
       <li>
-        The right to access – You have the right to request copies of your
+        The right to access - You have the right to request copies of your
         personal data.
       </li>
       <li>
-        The right to rectification – You have the right to request that we
+        The right to rectification - You have the right to request that we
         correct any information you believe is inaccurate. You also have the
         right to request that we complete the information you believe is
         incomplete.
       </li>
       <li>
-        The right to erasure – You have the right to request that we erase your
+        The right to erasure - You have the right to request that we erase your
         personal data, under certain conditions.
       </li>
       <li>
-        The right to restrict processing – You have the right to request that we
+        The right to restrict processing - You have the right to request that we
         restrict the processing of your personal data, under certain conditions.
       </li>
       <li>
-        The right to object to processing – You have the right to object to our
+        The right to object to processing - You have the right to object to our
         processing of your personal data, under certain conditions.
       </li>
       <li>
-        The right to data portability – You have the right to request that we
+        The right to data portability - You have the right to request that we
         transfer the data that we have collected to another organization, or
         directly to you, under certain conditions.
       </li>
