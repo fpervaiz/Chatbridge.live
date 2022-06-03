@@ -4,6 +4,10 @@ const mutations = {
     },
     setMessage(state, payload) {
         state.message = payload;
+    },
+    setBackendUrl(state, payload) {
+        console.log("Backend URL: " + payload);
+        state.backendUrl = payload;
     }
 };
 

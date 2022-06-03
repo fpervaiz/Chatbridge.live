@@ -1,16 +1,26 @@
 import firebase from 'firebase/app';
 import 'firebase/auth';
 
+import utils from '@/utils';
+
 const actions = {
-    registerUserAction({ commit }, payload) {
+    registerUserAction({ commit, state }, payload) {
         return new Promise((resolve, reject) => {
-            let registerUser = firebase.functions().httpsCallable("registerUser");
-            registerUser({
-                email: payload.email,
-                password: payload.password,
-                recaptchaToken: payload.recaptchaToken
-            })
-                .then(() => {
+            return fetch(state.backendUrl + '/api/register', {
+                method: 'POST',
+                headers: {
+                    'Content-type': 'application/json'
+                },
+                body: JSON.stringify({ email: payload.email, password: payload.password, recaptchaToken: payload.recaptchaToken })
+            }).catch(() => {
+                let message = {
+                    type: "error",
+                    text: "Something went wrong. Please try again later."
+                }
+                commit("setMessage", message)
+                resolve(message);
+            }).then((response) => {
+                if (response.ok) {
                     firebase
                         .auth()
                         .signInWithEmailAndPassword(payload.email, payload.password)
@@ -29,15 +39,19 @@ const actions = {
                                     });
                             });
                         });
-                })
-                .catch((error) => {
-                    let message = {
-                        type: "error",
-                        text: error,
-                    }
-                    commit("setMessage", message);
-                    reject(message);
-                });
+                } else {
+                    response.json().then((error) => {
+                        let message = {
+                            type: "error",
+                            text: error.message,
+                        }
+                        commit("setMessage", message);
+                        reject(message);
+                    })
+
+
+                }
+            });
         })
     },
 
@@ -80,6 +94,10 @@ const actions = {
                             break;
                         }
                         case "auth/wrong-password": {
+                            message.text = "Incorrect username or password."
+                            break;
+                        }
+                        case "auth/user-not-found": {
                             message.text = "Incorrect username or password."
                             break;
                         }
@@ -168,15 +186,19 @@ const actions = {
 
     checkAuthAction({ commit }) {
         return new Promise((resolve) => {
-            firebase.auth().onAuthStateChanged(user => {
-                if (user && user.emailVerified) {
-                    commit("setUser", user)
-                    resolve(user)
-                }
-                else {
-                    commit("setUser", null)
-                    resolve(null)
-                }
+            utils.getBackendUrl().then((backendUrl) => {
+                commit("setBackendUrl", backendUrl);
+
+                firebase.auth().onAuthStateChanged(user => {
+                    if (user && user.emailVerified) {
+                        commit("setUser", user)
+                        resolve(user)
+                    }
+                    else {
+                        commit("setUser", null)
+                        resolve(null)
+                    }
+                })
             })
         })
     },

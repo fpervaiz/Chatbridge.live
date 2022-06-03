@@ -2,6 +2,7 @@
   <v-container fluid class="fluid">
     <v-row justify="center" align="center" class="my-5">
       <v-col cols="10" md="6" class="text-center">
+        <Logo />
         <h1>Reset your password</h1>
         <p>Enter your university email address below.</p>
         <v-alert v-if="message" class="my-5" dense :type="message.type">
@@ -32,8 +33,12 @@
 </template>
 
 <script>
+import Logo from "./Logo";
+
 export default {
   name: "Login",
+
+  components: { Logo },
 
   computed: {},
 
@@ -46,9 +51,12 @@ export default {
     emailRules: [
       (v) => !!v || "Email address is required",
       (v) =>
-        /^(([^<>()[\]\\.,;:\s@']+(\.[^<>()\\[\]\\.,;:\s@']+)*)|('.+'))@cam.ac.uk$/.test(
-          v
-        ) || "Invalid email address",
+        new RegExp(
+          // eslint-disable-next-line
+          `^(([^<>()[\\]\\.,;:\s@']+(\.[^<>()\\[\]\\.,;:\s@']+)*)|('.+'))@(${JSON.parse(
+            process.env.VUE_APP_ALLOWED_REGISTER_UNIVERSITIES
+          ).join("|")})$`
+        ).test(v) || "Invalid email address",
     ],
   }),
 

@@ -1,154 +1,227 @@
 <template>
-  <v-container fluid class="my-2">
-    <v-row class="p-3">
-      <v-col class="col-xs">
-        <h4>
-          Who?<span v-if="showRemoteName"> ({{ showRemoteName }})</span>
-          <span v-if="peerCamStream">
-            <v-btn icon>
-              <v-icon @click="togglePeerShrink()" v-if="peerCamShrink"
-                >mdi-fullscreen</v-icon
-              >
-              <v-icon @click="togglePeerShrink()" v-else
-                >mdi-fullscreen-exit</v-icon
-              >
-            </v-btn></span
-          >
-        </h4>
-        <div v-if="!showPeerStream">
-          <h2>{{ peerStatusHeading }}</h2>
-          <p>{{ peerStatusMessage }}</p>
-        </div>
-        <video
-          class="camVideo"
-          v-if="peerCamStream"
-          :width="peerWidth"
-          height="auto"
-          autoplay="true"
-          playsinline
-          id="peerCam"
-          :src-object.prop.camel="peerCamStream"
-        ></video>
+  <div class="main text-center pa-0">
+    <div class="logoContainer">
+      <v-img
+        class="mb-5"
+        src="@/assets/logo.svg"
+        max-height="128px"
+        contain
+      ></v-img>
+    </div>
 
-        <h4>
-          You<span v-if="showLocalName"> ({{ showLocalName }}) </span>
-          <span v-if="userCamStream">
-            <v-btn icon>
-              <v-icon @click="toggleUserShrink()" v-if="userCamShrink"
-                >mdi-fullscreen</v-icon
-              >
-              <v-icon @click="toggleUserShrink()" v-else
-                >mdi-fullscreen-exit</v-icon
-              >
-            </v-btn></span
-          >
-        </h4>
-
-        <div v-if="!userCamStream">
-          <h2>No webcam found!</h2>
-          <p>Connect a webcam or allow access.</p>
-        </div>
-        <video
-          class="camVideo"
-          v-if="userCamStream"
-          :width="userWidth"
-          height="auto"
-          autoplay="true"
-          playsinline
-          id="userCam"
-          muted="muted"
-          :src-object.prop.camel="userCamStream"
-        ></video>
-      </v-col>
-
-      <v-col class="col-xs">
-        <div class="mb-3">
-          <p v-if="queueStats">
-            <span class="dot-green mr-2"></span>
-            <span class="font-weight-bold"
-              >{{ queueStats.online }} online now
-            </span>
-            <span class="font-weight-regular text--secondary"
-              >({{ queueStats.chatting }} chatting,
-              {{ queueStats.searching }} searching)</span
+    <div class="profileBtnContainer">
+      <v-tooltip right
+        ><template v-slot:activator="{ on }"
+          ><div v-on="on">
+            <v-btn fab elevation="1" v-on="on"
+              ><v-icon dark> mdi-account </v-icon></v-btn
             >
+          </div></template
+        ><span>Logged in as {{ userIdentity }}</span></v-tooltip
+      >
+    </div>
+
+    <div class="fscBtnContainer">
+      <v-tooltip bottom
+        ><template v-slot:activator="{ on }"
+          ><div v-on="on">
+            <v-btn fab elevation="1" v-on="on" @click="toggleFullScreen"
+              ><v-icon dark> mdi-fullscreen </v-icon></v-btn
+            >
+          </div></template
+        ><span>Toggle fullscreen</span></v-tooltip
+      >
+    </div>
+
+    <div v-if="peerCamStream" class="peerCamContainer">
+      <video
+        id="peerCam"
+        autoplay="true"
+        playsinline
+        :src-object.prop.camel="peerCamStream"
+      ></video>
+    </div>
+
+    <div v-else style="display: inline-block">
+      <h1>{{ peerStatusHeading }}</h1>
+      <h2 class="font-weight-regular">{{ peerStatusMessage }}</h2>
+    </div>
+
+    <div v-if="userCamStream" class="userCamContainer">
+      <video
+        class="camVideo"
+        autoplay="true"
+        playsinline
+        id="userCam"
+        muted="muted"
+        :src-object.prop.camel="userCamStream"
+      ></video>
+    </div>
+
+    <div class="actionButtonContainer">
+      <v-tooltip top
+        ><template v-slot:activator="{ on }"
+          ><div v-on="on" style="float: left">
+            <v-btn
+              fab
+              elevation="1"
+              x-large
+              class="mx-3"
+              v-on="on"
+              @click="toggleChat"
+              ><v-icon dark> mdi-chat </v-icon></v-btn
+            >
+          </div></template
+        ><span>Chat</span></v-tooltip
+      >
+      <v-tooltip top
+        ><template v-slot:activator="{ on }"
+          ><div v-on="on" style="float: left">
+            <v-btn
+              fab
+              elevation="1"
+              x-large
+              class="mx-3"
+              @click="search"
+              :disabled="!enableSearch"
+              v-on="on"
+              ><v-icon dark> mdi-account-search </v-icon></v-btn
+            >
+          </div></template
+        ><span>Find me someone</span></v-tooltip
+      >
+      <v-tooltip top>
+        <template v-slot:activator="{ on }"
+          ><div v-on="on" style="float: left">
+            <v-btn
+              fab
+              :light="micMuted"
+              elevation="1"
+              x-large
+              class="mx-3"
+              @click="toggleMic()"
+              v-on="on"
+              :disabled="enableMuteMic"
+              ><v-icon dark> mdi-microphone-off </v-icon></v-btn
+            >
+          </div></template
+        ><span v-if="micMuted">Unmute mic</span
+        ><span v-else>Mute mic</span></v-tooltip
+      >
+      <v-tooltip top>
+        <template v-slot:activator="{ on }"
+          ><div v-on="on" style="float: left">
+            <v-btn
+              fab
+              elevation="1"
+              x-large
+              class="mx-3"
+              @click="closePeerConnection(true)"
+              :disabled="!userConnected"
+              v-on="on"
+              ><v-icon dark> mdi-phone-hangup </v-icon></v-btn
+            >
+          </div></template
+        ><span>Disconnect</span></v-tooltip
+      >
+      <v-tooltip top>
+        <template v-slot:activator="{ on }"
+          ><div v-on="on" style="float: left">
+            <v-btn
+              fab
+              elevation="1"
+              x-large
+              class="mx-3"
+              color="error"
+              @click="
+                () => {
+                  userConnected
+                    ? (blockConfirmDialog = true)
+                    : blockReportPeer();
+                }
+              "
+              :disabled="!enableBlock"
+              v-on="on"
+              ><v-icon dark> mdi-cancel </v-icon>
+            </v-btn>
+          </div></template
+        >
+        <span
+          >Block/report <template v-if="userConnected">this</template
+          ><template v-else>last</template> user</span
+        >
+      </v-tooltip>
+    </div>
+
+    <div class="statsContainer" v-if="queueStats">
+      <span class="dot-green mr-2"></span>
+      <span class="font-weight-regular text--secondary">
+        {{ queueStats.online }}
+        online now ({{ queueStats.chatting }} chatting,
+        {{ queueStats.searching }} searching)</span
+      >
+    </div>
+
+    <v-card id="chatContainer">
+      <v-card-title>Chat</v-card-title>
+      <div v-if="eventBanner" class="eventBanner px-2">
+        <p>
+          📢
+          <a
+            class="eventBannerLink font-weight-bold"
+            target="_blank"
+            :href="eventBanner.link"
+            >{{ eventBanner.name }}</a
+          >
+          -
+          <template v-if="new Date(eventBanner.start_time) > new Date()">
+            <vue-countdown
+              :time="new Date(eventBanner.start_time) - Date.now()"
+              v-slot="{ days, hours, minutes, seconds }"
+              :emit-events="false"
+            >
+              starts in {{ days }} days, {{ hours }} hours,
+              {{ minutes }} minutes, {{ seconds }} seconds
+            </vue-countdown>
+          </template>
+          <template v-else>live now!</template>
+        </p>
+      </div>
+      <div id="chatArea">
+        <template v-for="(message, i) in chatMessages">
+          <p v-if="message.sender === '_STATUS_GREEN'" :key="i">
+            <span class="font-weight-regular text--secondary">{{
+              message.time
+            }}</span
+            ><strong style="color: green">{{ message.text }}</strong>
           </p>
-          <v-skeleton-loader v-else type="text"></v-skeleton-loader>
-        </div>
-        <div class="mb-3">
-          <v-btn class="mr-2 mb-2" @click="search" :disabled="!enableSearch"
-            ><v-icon dark left> mdi-account-search </v-icon>Find me someone
-          </v-btn>
-          <v-btn
-            class="mr-2 mb-2"
-            color="error"
-            @click="
-              () => {
-                userConnected
-                  ? (this.blockConfirmDialog = true)
-                  : blockReportPeer();
-              }
-            "
-            :disabled="!enableBlock"
-            ><v-icon dark left> mdi-cancel </v-icon> Block/Report
-            <template v-if="userConnected">this</template
-            ><template v-else>last</template> User
-          </v-btn>
-          <v-btn
-            class="mr-2 mb-2"
-            @click="closePeerConnection(true)"
-            :disabled="!userConnected"
-            ><v-icon dark left> mdi-phone-hangup </v-icon>Disconnect
-          </v-btn>
-        </div>
-        <div id="chatarea" class="px-3 py-3">
-          <h3>Chat</h3>
-          <div class="my-5" id="chatbox">
-            <template v-for="(message, i) in chatMessages">
-              <p
-                v-if="message.sender === '_STATUS_GREEN'"
-                :key="i"
-                style="color: green"
-              >
-                <strong>{{ message.text }}</strong>
-              </p>
-              <p
-                v-else-if="message.sender === '_STATUS_RED'"
-                :key="i"
-                style="color: red"
-              >
-                <strong>{{ message.text }}</strong>
-              </p>
-              <p v-else :key="i">
-                <strong>{{ message.sender }}: </strong>
-                <span v-html="message.html"></span>
-              </p>
-            </template>
-          </div>
-          <v-text-field
-            label="Type a message..."
-            v-model="chatMessageInput"
-            :append-outer-icon="'mdi-send'"
-            @click:append-outer="sendChatMessage"
-            v-on:keyup.enter="sendChatMessage"
-            :disabled="!userConnected"
-            solo
-          ></v-text-field>
-        </div>
-        <div>
-          <v-expansion-panels>
-            <v-expansion-panel>
-              <v-expansion-panel-header
-                >Community Rules</v-expansion-panel-header
-              >
-              <v-expansion-panel-content>
-                <RuleList />
-              </v-expansion-panel-content>
-            </v-expansion-panel>
-          </v-expansion-panels>
-        </div>
-      </v-col>
-    </v-row>
+          <p v-else-if="message.sender === '_STATUS_RED'" :key="i">
+            <span class="font-weight-regular text--secondary">{{
+              message.time
+            }}</span
+            ><strong style="color: red">{{ message.text }}</strong>
+          </p>
+          <p v-else :key="i">
+            <span class="font-weight-regular text--secondary">{{
+              message.time
+            }}</span
+            ><strong>{{ message.sender }}: </strong>
+            <span v-html="message.html"></span>
+          </p>
+        </template>
+      </div>
+      <v-text-field
+        class="px-1"
+        label="Type a message..."
+        v-model="chatMessageInput"
+        :append-outer-icon="'mdi-send'"
+        @click:append-outer="sendChatMessage"
+        v-on:keyup.enter="sendChatMessage"
+        hide-details
+        solo
+      ></v-text-field>
+    </v-card>
+
     <v-overlay v-if="showWsOverlay">
       <v-alert v-if="wsConnectionError" type="error">{{
         this.wsConnectionError
@@ -159,7 +232,7 @@
           indeterminate
           color="primary"
         ></v-progress-circular
-        >Connecting you to our matchmaking genie...</v-alert
+        >Please wait...</v-alert
       >
     </v-overlay>
     <v-dialog v-model="blockConfirmDialog" persistent max-width="576">
@@ -234,17 +307,20 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </v-container>
+  </div>
 </template>
 
 <script>
 import io from "socket.io-client";
 import Peer from "simple-peer";
 import Autolinker from "autolinker";
-
-import RuleList from "./RuleList";
-
+import firebase from "firebase/app";
+import "firebase/remote-config";
+import VueCountdown from "@chenfengyuan/vue-countdown";
+import { format } from "date-fns";
 import utils from "@/utils";
+
+//import RuleList from "./RuleList";
 
 const appStates = {
   WS_CONNECTING: 1,
@@ -263,11 +339,12 @@ const appStates = {
 export default {
   name: "Chat",
 
-  components: { RuleList },
+  components: { VueCountdown },
 
   data() {
     return {
-      backendUrl: null,
+      remoteConfig: null,
+      eventBanner: null,
 
       appState: appStates.WS_CONNECTING,
 
@@ -284,12 +361,13 @@ export default {
       userCamStream: null,
       peerCamStream: null,
 
-      userCamShrink: false,
-      peerCamShrink: false,
+      micMuted: false,
 
       chatMessages: [],
       chatMessageInput: "",
-      chatBox: null,
+      chatContainer: null,
+      chatArea: null,
+      chatOpen: false,
 
       blockConfirmDialog: false,
       blockReportDialog: false,
@@ -317,7 +395,40 @@ export default {
     };
   },
 
+  created() {
+    this.remoteConfig = firebase.remoteConfig();
+    this.remoteConfig.settings.minimumFetchIntervalMillis = 600000;
+
+    this.remoteConfig
+      .fetchAndActivate()
+      .then(() => {
+        let eventBannerJson = this.remoteConfig.getValue("event_banner")._value;
+        if (eventBannerJson) {
+          const eventBanner = JSON.parse(eventBannerJson);
+          if (eventBanner.end_time > Date.now()) {
+            this.eventBanner = eventBanner;
+          }
+        }
+      })
+      .catch((err) => console.log(err));
+  },
+
   computed: {
+    userIdentity() {
+      let email = this.$store.getters.getUserEmail;
+      let university = utils.domainToUniversityName(email.split("@")[1]);
+
+      if (university) {
+        return `${email} (${university})`;
+      } else {
+        return email;
+      }
+    },
+
+    enableMuteMic() {
+      return !this.appState === appStates.STARTING;
+    },
+
     enableSearch() {
       return (
         this.appState === appStates.READY ||
@@ -370,6 +481,9 @@ export default {
 
     peerStatusHeading() {
       switch (this.appState) {
+        case appStates.STARTING: {
+          return "No webcam found!";
+        }
         case appStates.READY: {
           return "Paused.";
         }
@@ -396,6 +510,9 @@ export default {
 
     peerStatusMessage() {
       switch (this.appState) {
+        case appStates.STARTING: {
+          return "Connect one or allow access.";
+        }
         case appStates.READY: {
           return "Hit 'Find me someone' to get going.";
         }
@@ -403,7 +520,7 @@ export default {
           return "Finding you someone...";
         }
         case appStates.CONNECTING: {
-          return "Prepare your opening line!";
+          return "Get ready!";
         }
         case appStates.DISCONNECTED: {
           return "The other person has left the chat.";
@@ -513,12 +630,17 @@ export default {
 
     addChatMessage(chatMessage) {
       chatMessage.html = this.autolinker.link(chatMessage.text);
+      const time = format(new Date(), "HH:mm");
+      chatMessage.time = `${time} `;
       this.chatMessages.push(chatMessage);
-      // This is really bad. Need to diagnose slow v-for performance.
       setTimeout(
-        () => (this.chatBox.scrollTop = this.chatBox.scrollHeight),
+        () => (this.chatArea.scrollTop = this.chatArea.scrollHeight),
         100
       );
+
+      if (!this.chatOpen) {
+        this.toggleChat();
+      }
     },
 
     closePeerConnection(isInitiator) {
@@ -578,19 +700,55 @@ export default {
       this.userCamShrink = !this.userCamShrink;
     },
 
-    setBackendUrl() {
-      utils.getBackendUrl().then((url) => (this.backendUrl = url));
+    toggleChat() {
+      this.chatContainer.classList.toggle("open");
+      this.chatOpen = !this.chatOpen;
+    },
+
+    toggleMic() {
+      this.micMuted = !this.micMuted;
+      this.userCamStream.getAudioTracks().forEach((track) => {
+        track.enabled = !track.enabled;
+      });
+    },
+
+    toggleFullScreen() {
+      if (
+        (document.fullScreenElement && document.fullScreenElement !== null) ||
+        (!document.mozFullScreen && !document.webkitIsFullScreen)
+      ) {
+        if (document.documentElement.requestFullScreen) {
+          document.documentElement.requestFullScreen();
+        } else if (document.documentElement.mozRequestFullScreen) {
+          document.documentElement.mozRequestFullScreen();
+        } else if (document.documentElement.webkitRequestFullScreen) {
+          document.documentElement.webkitRequestFullScreen(
+            Element.ALLOW_KEYBOARD_INPUT
+          );
+        }
+      } else {
+        if (document.cancelFullScreen) {
+          document.cancelFullScreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.webkitCancelFullScreen) {
+          document.webkitCancelFullScreen();
+        }
+      }
     },
   },
 
   mounted() {
+    window.onbeforeunload = () => {
+      return "";
+    };
+
     var self = this;
 
     this.$analytics.logEvent("chat_app_start");
 
-    this.chatBox = document.getElementById("chatbox");
-
-    self.setBackendUrl();
+    this.chatContainer = document.getElementById("chatContainer");
+    this.chatArea = document.getElementById("chatArea");
 
     self.$store
       .dispatch("getAuthIdTokenAction")
@@ -601,7 +759,7 @@ export default {
         });
       })
       .then((idToken) => {
-        self.matchingSocket = io(self.backendUrl, {
+        self.matchingSocket = io(self.$store.state.backendUrl, {
           transports: ["websocket"],
           reconnectionAttempts: 5,
           auth: {
@@ -625,6 +783,11 @@ export default {
                 self.userCamStream = stream;
                 self.$analytics.logEvent("chat_app_ready");
                 self.appState = appStates.READY;
+
+                self.addChatMessage({
+                  sender: "_STATUS_GREEN",
+                  text: `Hi ${self.$store.getters.getUserEmail}!`,
+                });
               })
               .catch(function (error) {
                 console.log(error);
@@ -743,7 +906,7 @@ export default {
             }
             default:
               this.wsConnectionError =
-                "Looks like our matchmaking genie has gone missing. Please try again later.";
+                "There's an issue on our end. Please try again later.";
           }
           this.matchingSocket.removeAllListeners();
         });
@@ -765,6 +928,7 @@ export default {
       this.wsConnected = false;
     }
 
+    window.onbeforeunload = null;
     document.removeEventListener("beforeunload", this.onHardClose);
     this.$analytics.logEvent("chat_app_exited");
   },
@@ -772,6 +936,41 @@ export default {
 </script>
 
 <style scoped>
+.main {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.logoContainer {
+  position: absolute;
+  height: 64px;
+  margin: 0 auto;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.profileBtnContainer {
+  position: absolute;
+  top: 2%;
+  left: 2%;
+  z-index: 1;
+}
+
+.fscBtnContainer {
+  position: absolute;
+  top: 2%;
+  right: 2%;
+  z-index: 1;
+}
+
+.actionButtonContainer {
+  position: absolute;
+  bottom: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .camVideo {
   -webkit-transition: width 300ms ease-in-out, height 300ms ease-in-out;
   -moz-transition: width 300ms ease-in-out, height 300ms ease-in-out;
@@ -779,14 +978,80 @@ export default {
   transition: width 300ms ease-in-out, height 300ms ease-in-out;
 }
 
+.userCamContainer {
+  position: absolute;
+  bottom: 2%;
+  right: 2%;
+  max-width: 300px;
+  overflow: hidden;
+  outline: 2px solid white;
+  line-height: 0;
+  /* border-radius */
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  /* box-shadow */
+  -webkit-box-shadow: rgba(0, 0, 0, 0.8) 0px 0 10px;
+  -moz-box-shadow: rgba(0, 0, 0, 0.8) 0 0 10px;
+  box-shadow: rgba(0, 0, 0, 0.8) 0 0 10px;
+}
+
+.peerCamContainer {
+  overflow: hidden;
+  line-height: 0;
+}
+
+.statsContainer {
+  position: absolute;
+  bottom: 5px;
+  width: 100vw;
+  z-index: 1;
+}
+
 #userCam {
   -webkit-transform: scaleX(-1);
   transform: scaleX(-1);
+  max-width: 300px;
 }
 
-#chatbox {
+#peerCam {
+  height: 100vh;
+  max-width: 100vw;
+  line-height: 0;
+  object-fit: cover;
+}
+
+#chatContainer {
+  position: absolute;
+  top: 20%;
+  transform: translateX(-100%);
+  transition: transform ease-out 0.3s;
+}
+
+#chatContainer.open {
+  transform: translateX(0);
+}
+
+.eventBanner {
+  width: 350px;
+  background-color: crimson;
+}
+
+.eventBannerLink {
+  text-decoration: underline;
+  color: white;
+}
+
+#chatArea {
+  width: 350px;
+  height: 50vh;
   overflow-y: auto;
-  max-height: 30vh;
+  text-align: left;
+  padding-left: 15px;
+  padding-right: 15px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  background-color: black;
 }
 
 .dot-green {

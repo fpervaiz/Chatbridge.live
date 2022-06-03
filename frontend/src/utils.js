@@ -8,9 +8,19 @@ const utils = {
                     "https://service-chatbridge-staging.herokuapp.com/config/url?name=" +
                     process.env.VUE_APP_VERCEL_GIT_COMMIT_REF
                 )
-                    .then((response) => response.json().then((data) => resolve(data.url)));
+                    .then((response) => response.json().then((data) => { console.log("Backend URL: " + data.url); resolve(data.url) }));
             }
         })
+    },
+    domainToUniversityName: (domain) => {
+        switch (domain) {
+            case "cam.ac.uk": {
+                return "University of Cambridge";
+            }
+            case "chatbridge.live": {
+                return "Chatbridge Admin";
+            }
+        }
     }
 }
 
